@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:project/bindings/booking_binding.dart';
 
 // Models
 import 'package:project/data/models/apartment_model.dart';
@@ -13,6 +12,7 @@ import 'package:project/features/auth/pending_approval_page.dart';
 
 // Home & Onboarding
 import 'package:project/features/home/home_page.dart';
+import 'package:project/features/notification/notification_screen.dart';
 import 'package:project/features/onboarding/onboarding_screen.dart';
 
 // Chat
@@ -25,7 +25,7 @@ import 'package:project/features/apartment/add_apartment/add_apartment_page.dart
 
 // Booking & Notifications
 import 'package:project/features/booking/booking_page.dart';
-import 'package:project/notification/notification_screen.dart';
+import 'package:project/bindings/booking_binding.dart';
 
 // Bindings
 import 'package:project/bindings/auth_binding.dart';
