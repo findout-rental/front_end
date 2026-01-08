@@ -25,7 +25,7 @@ import 'package:project/features/apartment/add_apartment/add_apartment_page.dart
 
 // Booking & Notifications
 import 'package:project/features/booking/booking_page.dart';
-import 'package:project/notification/notification_screen.dart';
+import 'package:project/features/notification/notification_screen.dart';
 
 // Bindings
 import 'package:project/bindings/auth_binding.dart';
