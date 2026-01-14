@@ -1,3 +1,5 @@
+// lib/shared_widgets/filter_bottom_sheet.dart
+
 import 'package:flutter/material.dart';
 
 class FilterBottomSheet extends StatefulWidget {
@@ -8,12 +10,15 @@ class FilterBottomSheet extends StatefulWidget {
 }
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
+  // --- DATA MOCK ---
+  // في تطبيق حقيقي، قد تأتي هذه من API
   final Map<String, List<String>> _governorateCityMap = {
     'الرياض': ['الرياض', 'الدرعية', 'الخرج'],
     'مكة المكرمة': ['مكة', 'جدة', 'الطائف'],
     'الشرقية': ['الدمام', 'الخبر', 'الجبيل'],
   };
 
+  // --- LOCAL STATE for filters ---
   RangeValues? _priceRange;
   RangeValues? _areaRange;
   int? _bedrooms;
@@ -24,14 +29,18 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   String? _selectedCity;
   List<String> _cities = [];
 
+  // --- HELPER METHODS ---
+
+  /// تحديث قائمة المدن عند اختيار محافظة
   void _updateCities(String newGovernorate) {
     setState(() {
       _selectedGovernorate = newGovernorate;
       _cities = _governorateCityMap[newGovernorate] ?? [];
-      _selectedCity = null;
+      _selectedCity = null; // إعادة تعيين المدينة عند تغيير المحافظة
     });
   }
 
+  /// إعادة تعيين جميع الفلاتر إلى قيمها الافتراضية
   void _resetFilters() {
     setState(() {
       _priceRange = null;
@@ -46,22 +55,56 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     });
   }
 
-  bool _isFilterComplete() {
-    final isLocationValid =
-        _selectedGovernorate != null &&
-        (_cities.isNotEmpty ? _selectedCity != null : true);
+  /// ✅ دالة جديدة لتجميع الفلاتر في Map
+  Map<String, dynamic> _collectFilters() {
+    final filters = <String, dynamic>{};
 
-    return _priceRange != null &&
-        _areaRange != null &&
-        _bedrooms != null &&
-        _bathrooms != null &&
-        _rating != null &&
-        isLocationValid;
+    if (_priceRange != null) {
+      filters['min_price'] = _priceRange!.start.round();
+      filters['max_price'] = _priceRange!.end.round();
+    }
+    if (_areaRange != null) {
+      filters['min_area'] = _areaRange!.start.round();
+      filters['max_area'] = _areaRange!.end.round();
+    }
+    if (_bedrooms != null) {
+      filters['bedrooms'] = _bedrooms;
+    }
+    if (_bathrooms != null) {
+      filters['bathrooms'] = _bathrooms;
+    }
+    if (_rating != null) {
+      filters['min_rating'] = _rating!.round();
+    }
+    if (_hasBalcony) {
+      filters['has_balcony'] = 1; // استخدام 1 لـ true
+    }
+    if (_selectedGovernorate != null) {
+      filters['governorate'] = _selectedGovernorate;
+    }
+    if (_selectedCity != null) {
+      filters['city'] = _selectedCity;
+    }
+
+    return filters;
+  }
+
+  /// التحقق مما إذا كان قد تم اختيار أي فلتر
+  bool _isAnyFilterSelected() {
+    return _priceRange != null ||
+        _areaRange != null ||
+        _bedrooms != null ||
+        _bathrooms != null ||
+        _rating != null ||
+        _hasBalcony ||
+        _selectedGovernorate != null ||
+        _selectedCity != null;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // لتجنب تغطية الحقول عند ظهور لوحة المفاتيح
     return Padding(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -74,6 +117,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- Header ---
             Center(
               child: Container(
                 width: 40,
@@ -87,6 +131,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             const SizedBox(height: 20),
             Text('فلترة', style: theme.textTheme.titleLarge),
 
+            // --- Price Range ---
             _sectionTitle('السعر (ريال)'),
             _rangeInfo(
               _priceRange,
@@ -100,12 +145,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               max: 50000,
               divisions: 49,
               labels: RangeLabels(
-                _priceRange?.start.round().toString() ?? '',
-                _priceRange?.end.round().toString() ?? '',
+                _priceRange?.start.round().toString() ?? '1000',
+                _priceRange?.end.round().toString() ?? '50000',
               ),
               onChanged: (v) => setState(() => _priceRange = v),
             ),
 
+            // --- Area Range ---
             _sectionTitle('المساحة (م²)'),
             _rangeInfo(_areaRange, defaultMin: 50, defaultMax: 400, unit: 'م²'),
             RangeSlider(
@@ -114,12 +160,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               max: 400,
               divisions: 35,
               labels: RangeLabels(
-                _areaRange?.start.round().toString() ?? '',
-                _areaRange?.end.round().toString() ?? '',
+                _areaRange?.start.round().toString() ?? '50',
+                _areaRange?.end.round().toString() ?? '400',
               ),
               onChanged: (v) => setState(() => _areaRange = v),
             ),
 
+            // --- Rooms ---
             _sectionTitle('عدد الغرف'),
             Row(
               children: [
@@ -144,16 +191,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ],
             ),
 
+            // --- Rating ---
             _sectionTitle('التقييم'),
             Row(
               children: [
                 Expanded(
                   child: Slider(
-                    value: _rating ?? 3,
-                    min: 1,
+                    value: _rating ?? 0, // ابدأ من 0
+                    min: 0,
                     max: 5,
-                    divisions: 4,
-                    label: (_rating ?? 3).round().toString(),
+                    divisions: 5,
+                    label: (_rating ?? 0).round().toString(),
                     onChanged: (v) => setState(() => _rating = v),
                   ),
                 ),
@@ -165,6 +213,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ],
             ),
 
+            // --- Other Features ---
             CheckboxListTile(
               title: Text('يوجد شرفة', style: theme.textTheme.titleMedium),
               value: _hasBalcony,
@@ -174,6 +223,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             ),
             const Divider(),
 
+            // --- Location ---
             _sectionTitle('الموقع'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
@@ -195,15 +245,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 items: _cities
                     .map(
                       (city) =>
-                          DropdownMenuItem(value: city, child: Text(city)),
-                    )
+                      DropdownMenuItem(value: city, child: Text(city)),
+                )
                     .toList(),
                 onChanged: (value) => setState(() => _selectedCity = value),
                 decoration: const InputDecoration(labelText: 'المدينة'),
               ),
             ],
-
             const SizedBox(height: 30),
+
+            // --- Action Buttons ---
             Row(
               children: [
                 Expanded(
@@ -215,9 +266,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 const SizedBox(width: 15),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isFilterComplete()
-                        ? () => Navigator.pop(context)
-                        : null,
+                    onPressed: () {
+                      // ✅ تم تعديل هذا الجزء
+                      final filters = _collectFilters();
+                      Navigator.pop(context, filters);
+                    },
                     child: const Text('تطبيق'),
                   ),
                 ),
@@ -237,11 +290,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   Widget _rangeInfo(
-    RangeValues? values, {
-    required double defaultMin,
-    required double defaultMax,
-    required String unit,
-  }) {
+      RangeValues? values, {
+        required double defaultMin,
+        required double defaultMax,
+        required String unit,
+      }) {
     final start = (values?.start ?? defaultMin).round();
     final end = (values?.end ?? defaultMax).round();
     return Padding(

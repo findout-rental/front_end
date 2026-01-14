@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/controllers/theme_controller.dart';
+import 'package:project/core/routing/app_router.dart';
 import 'package:project/data/models/user_model.dart';
 import 'package:project/shared_widgets/role_toggle.dart';
 
@@ -11,7 +12,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ThemeController themeController = Get.find<ThemeController>();
-    final user = UserModel.dummy();
+    final user = UserModel.dummy(); // ⚠️ لاحقًا: من AuthController
 
     return Scaffold(
       appBar: AppBar(
@@ -21,7 +22,9 @@ class ProfilePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20.0),
         children: [
-          /// 🧑 User Info
+          // -------------------------------------------------------------------
+          // 🧑 User Info
+          // -------------------------------------------------------------------
           Row(
             children: [
               CircleAvatar(
@@ -55,7 +58,9 @@ class ProfilePage extends StatelessWidget {
 
           const Divider(height: 50),
 
-          /// 🌙 Theme Toggle (Obx فقط هنا)
+          // -------------------------------------------------------------------
+          // 🌙 Theme Toggle
+          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.brightness_6_outlined,
@@ -73,13 +78,19 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
 
+          // -------------------------------------------------------------------
+          // ✏️ Edit Profile
+          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.edit_outlined,
             title: 'تعديل الملف الشخصي',
-            onTap: () {},
+            onTap: () => Get.toNamed(AppRouter.editProfile),
           ),
 
+          // -------------------------------------------------------------------
+          // ⚙️ Settings
+          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.settings_outlined,
@@ -89,6 +100,9 @@ class ProfilePage extends StatelessWidget {
 
           const Divider(height: 40),
 
+          // -------------------------------------------------------------------
+          // 🚪 Logout
+          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.logout,
@@ -107,6 +121,9 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Profile option builder
+  // ---------------------------------------------------------------------------
   Widget _buildProfileOption({
     required BuildContext context,
     required IconData icon,
@@ -116,8 +133,9 @@ class ProfilePage extends StatelessWidget {
     bool isLogout = false,
   }) {
     final theme = Theme.of(context);
-    final Color color =
-        isLogout ? theme.colorScheme.error : theme.textTheme.bodyLarge!.color!;
+    final Color color = isLogout
+        ? theme.colorScheme.error
+        : theme.textTheme.bodyLarge!.color!;
 
     return ListTile(
       leading: Icon(icon, color: color),
@@ -129,7 +147,7 @@ class ProfilePage extends StatelessWidget {
         ),
       ),
       trailing:
-          trailing ??
+      trailing ??
           (isLogout ? null : const Icon(Icons.arrow_forward_ios, size: 16)),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(vertical: 4.0),

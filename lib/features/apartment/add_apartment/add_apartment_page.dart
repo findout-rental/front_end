@@ -1,7 +1,12 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:image_picker/image_picker.dart';
+import 'package:project/controllers/apartment_controller.dart';
 import 'package:project/shared_widgets/custom_text_field.dart';
+import 'dart:convert';
+
 
 class AddApartmentPage extends StatefulWidget {
   const AddApartmentPage({super.key});
@@ -16,6 +21,8 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
   int _bedrooms = 1;
   int _bathrooms = 1;
   bool _hasBalcony = false;
+  bool _hasAC = false;
+  bool _hacInternet = false;
 
   final _step1FormKey = GlobalKey<FormState>();
   final _step2FormKey = GlobalKey<FormState>();
@@ -39,16 +46,82 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     super.dispose();
   }
 
-  Future<void> _pickImages() async {
-    final List<XFile> pickedFiles = await _picker.pickMultiImage(
-      imageQuality: 80,
-    );
-    if (pickedFiles.isNotEmpty) {
-      setState(() {
-        _apartmentImages.addAll(pickedFiles.map((file) => File(file.path)));
-      });
-    }
+Future<FormData> _buildFormData() async {
+  final amenities = <String>[];
+  if (_hasBalcony) amenities.add('Balcony');
+  if (_hasAC) amenities.add('Air Conditioning');
+  if (_hacInternet) amenities.add('WiFi');
+
+  final formData = FormData();
+
+  // ---------- FIELDS ----------
+  formData.fields.addAll([
+    MapEntry('title', _titleController.text.trim()),
+    MapEntry('description', _descriptionController.text.trim()),
+    MapEntry('governorate', _governorateController.text.trim()),
+    MapEntry('city', _cityController.text.trim()),
+    MapEntry('address',
+        '${_governorateController.text.trim()}, ${_cityController.text.trim()}'),
+
+    MapEntry('nightly_price', _priceController.text.trim()),
+    MapEntry(
+      'monthly_price',
+      ((double.tryParse(_priceController.text) ?? 0) * 30).toString(),
+    ),
+
+    MapEntry('living_rooms', '1'),
+    MapEntry('size', _areaController.text.trim()),
+
+    MapEntry('bedrooms', _bedrooms.toString()),
+    MapEntry('bathrooms', _bathrooms.toString()),
+    MapEntry('max_guests', (_bedrooms * 2).toString()),
+  ]);
+
+  // ---------- AMENITIES ARRAY ----------
+  for (int i = 0; i < amenities.length; i++) {
+    formData.fields.add(MapEntry('amenities[$i]', amenities[i]));
   }
+
+  // ---------- PHOTOS ARRAY (STRINGS) ----------
+  for (int i = 0; i < _apartmentImages.length; i++) {
+    final bytes = await _apartmentImages[i].readAsBytes();
+    final base64Image = base64Encode(bytes);
+
+    // إذا الباك يحتاج data-uri جرب السطر التالي بدل base64Image:
+    // final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+
+    formData.fields.add(MapEntry('photos[$i]', base64Image));
+  }
+
+  return formData;
+}
+
+
+
+
+
+
+Future<void> _pickImages() async {
+  final pickedFiles = await _picker.pickMultiImage(imageQuality: 80);
+  if (pickedFiles.isEmpty) return;
+
+  setState(() {
+    final remaining = 10 - _apartmentImages.length;
+    if (remaining <= 0) {
+      Get.snackbar('تنبيه', 'مسموح بحد أقصى 10 صور فقط');
+      return;
+    }
+
+    final toAdd = pickedFiles.take(remaining).map((x) => File(x.path)).toList();
+    _apartmentImages.addAll(toAdd);
+
+    if (pickedFiles.length > remaining) {
+      Get.snackbar('تنبيه', 'تم إضافة $remaining صور فقط لأن الحد الأقصى 10');
+    }
+  });
+}
+
+  
 
   void _removeImage(int index) {
     setState(() {
@@ -62,7 +135,7 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
       appBar: AppBar(title: const Text('أضف شقتك')),
       body: Stepper(
         currentStep: _currentStep,
-        onStepContinue: () {
+        onStepContinue: () async {
           if (_currentStep == 0) {
             if (_step1FormKey.currentState!.validate()) {
               setState(() => _currentStep += 1);
@@ -70,10 +143,25 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
           } else if (_currentStep < 2) {
             setState(() => _currentStep += 1);
           } else {
-            // TODO: منطق إرسال كل البيانات إلى الخادم
-            print('Form Submitted!');
-            Navigator.pop(context);
-          }
+  // ✅ تحقق قبل الإرسال (آخر خطوة)
+  if (_apartmentImages.isEmpty) {
+    Get.snackbar('خطأ', 'لازم تضيف صورة واحدة على الأقل');
+    return;
+  }
+
+  if (_apartmentImages.length > 10) {
+    Get.snackbar('خطأ', 'الحد الأقصى 10 صور');
+    return;
+  }
+
+  final controller = Get.find<ApartmentController>();
+ final formData = await _buildFormData();
+final ok = await controller.addApartment(formData);
+if (ok) Navigator.pop(context);
+
+}
+
+
         },
         onStepCancel: _currentStep > 0
             ? () => setState(() => _currentStep -= 1)
@@ -137,21 +225,21 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
           const SizedBox(height: 16),
           CustomTextField(
             controller: _governorateController,
-            hint: 'عنوان المحافظة (مثال: الرياض)',
+            hint: 'عنوان المحافظة (مثال: سوريا)',
             icon: Icons.location_city,
             validator: (v) => v!.isEmpty ? 'هذا الحقل مطلوب' : null,
           ),
           const SizedBox(height: 16),
           CustomTextField(
             controller: _cityController,
-            hint: 'عنوان المدينة (مثال: القصيم)',
+            hint: 'عنوان المدينة (مثال: دمشق)',
             icon: Icons.location_city_rounded,
             validator: (v) => v!.isEmpty ? 'هذا الحقل مطلوب' : null,
           ),
           const SizedBox(height: 16),
           CustomTextField(
             controller: _priceController,
-            hint: 'السعر / شهري (بالريال)',
+            hint: 'السعر / شهري (بالدولار)',
             icon: Icons.attach_money,
             keyboardType: TextInputType.number,
             validator: (v) => v!.isEmpty ? 'هذا الحقل مطلوب' : null,
@@ -168,9 +256,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('الميزات', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 16),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -181,7 +266,7 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
               ),
             ],
           ),
-      
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -194,7 +279,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
           ),
           const SizedBox(height: 12),
 
-     
           CustomTextField(
             controller: _areaController,
             hint: 'المساحة (م²)',
@@ -205,11 +289,30 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
 
           const Divider(height: 24),
 
-   
+          const SizedBox(height: 16),
+          Text('الميزات', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 10),
+
           CheckboxListTile(
             title: const Text('يوجد شرفة'),
             value: _hasBalcony,
             onChanged: (value) => setState(() => _hasBalcony = value ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+
+          CheckboxListTile(
+            title: const Text('يوجد تكييف'),
+            value: _hasAC,
+            onChanged: (value) => setState(() => _hasAC = value ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+
+          CheckboxListTile(
+            title: const Text('يوجد إنترنت'),
+            value: _hacInternet,
+            onChanged: (value) => setState(() => _hacInternet = value ?? false),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
           ),
@@ -221,7 +324,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
   Widget _buildStep3() {
     return Column(
       children: [
- 
         OutlinedButton.icon(
           onPressed: _pickImages,
           icon: const Icon(Icons.add_photo_alternate_outlined),

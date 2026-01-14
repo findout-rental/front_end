@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:project/controllers/auth_controller.dart';
 import 'package:project/core/routing/app_router.dart';
+import 'package:project/features/auth/otp_verification_page.dart';
 import 'package:project/shared_widgets/custom_text_field.dart';
 import 'package:project/shared_widgets/image_picker_box.dart';
 import 'package:project/shared_widgets/password_field.dart';
@@ -19,26 +20,33 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  // ===============================
+  // LOCAL UI STATE
+  // ===============================
   bool _isTenant = true;
-
   File? _personalImage;
   File? _idImage;
 
+  // ===============================
+  // DEPENDENCIES
+  // ===============================
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _dobController = TextEditingController();
-
   final AuthController controller = Get.find<AuthController>();
 
+  // ===============================
+  // LIFECYCLE
+  // ===============================
   @override
   void dispose() {
     _dobController.dispose();
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
-  Future<void> _pickImage(ValueChanged<File> onPicked) async {
+  // ===============================
+  // HELPERS
+  // ===============================
+  Future<void> _pickImage(ValueChanged<File?> onPicked) async {
     final XFile? picked = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
@@ -63,9 +71,21 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  // ---------------------------------------------------------------------------
+  /// ===============================
+  /// SIGN UP FLOW (OTP FIRST)
+  /// ===============================
+Future<void> _handleSignUp() async {
+  await controller.register(
+    isTenant: _isTenant,
+    personalImage: _personalImage,
+    idImage: _idImage,
+  );
+}
+
+
+  // ===============================
   // UI
-  // ---------------------------------------------------------------------------
+  // ===============================
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -76,7 +96,7 @@ class _SignUpPageState extends State<SignUpPage> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Obx(
-            () => Column(
+                () => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Icon(
@@ -85,13 +105,11 @@ class _SignUpPageState extends State<SignUpPage> {
                   color: theme.primaryColor,
                 ),
                 const SizedBox(height: 10),
-
                 Text(
                   'Create Your Account',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleLarge,
                 ),
-
                 const SizedBox(height: 20),
 
                 // Role
@@ -101,7 +119,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   value: _isTenant,
                   onChanged: (v) => setState(() => _isTenant = v),
                 ),
-
                 const SizedBox(height: 20),
 
                 CustomTextField(
@@ -145,7 +162,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   hint: 'Confirm Password',
                   controller: controller.confirmPasswordController,
                 ),
-
                 const SizedBox(height: 20),
 
                 Row(
@@ -154,8 +170,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       title: 'Personal Photo',
                       icon: Icons.person_add_alt_1_outlined,
                       image: _personalImage,
-                      onTap: () =>
-                          _pickImage((f) => _personalImage = f),
+                      onTap: () => _pickImage((f) => _personalImage = f),
                     ),
                     const SizedBox(width: 12),
                     ImagePickerBox(
@@ -167,7 +182,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ],
                 ),
 
-                // Error
                 if (controller.errorMessage.value.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -179,18 +193,12 @@ class _SignUpPageState extends State<SignUpPage> {
 
                 const SizedBox(height: 24),
 
-                // Register
                 PrimaryButton(
                   text: controller.isLoading.value
-                      ? 'Signing up...'
+                      ? 'Processing...'
                       : 'Sign up',
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : () => controller.register(
-                            isTenant: _isTenant,
-                            personalImage: _personalImage,
-                            idImage: _idImage,
-                          ),
+                  onPressed:
+                  controller.isLoading.value ? null : _handleSignUp,
                 ),
 
                 const SizedBox(height: 16),
@@ -208,21 +216,14 @@ class _SignUpPageState extends State<SignUpPage> {
                           color: theme.primaryColor,
                         ),
                         recognizer: TapGestureRecognizer()
-                          ..onTap = () =>
-                              Get.offAllNamed(AppRouter.signIn),
+                          ..onTap =
+                              () => Get.offAllNamed(AppRouter.signIn),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 16),
-
-                Text(
-                  'Terms of service & Privacy Policy',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall,
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
               ],
             ),
           ),

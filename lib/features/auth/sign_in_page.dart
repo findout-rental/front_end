@@ -25,7 +25,7 @@ class SignInPage extends StatelessWidget {
             height: MediaQuery.of(context).size.height -
                 MediaQuery.of(context).padding.top,
             child: Obx(
-              () => Column(
+                  () => Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -63,9 +63,8 @@ class SignInPage extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        // TODO: forget password flow
-                      },
+                      onPressed: () =>
+                          Get.toNamed(AppRouter.forgotPassword),
                       child: Text(
                         'Forget Password?',
                         style: TextStyle(color: theme.primaryColor),

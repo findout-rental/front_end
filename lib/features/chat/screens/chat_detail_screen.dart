@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:project/controllers/chat_controller.dart';
 import 'package:project/data/models/chat_model.dart';
 import 'package:project/data/models/message_model.dart';
 
@@ -13,12 +15,13 @@ class ChatDetailScreen extends StatefulWidget {
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _textController = TextEditingController();
-  final List<Message> _messages = [];
+  final ChatController controller = Get.find<ChatController>();
 
   @override
   void initState() {
     super.initState();
-    _messages.addAll(mockMessages.reversed);
+    // جلب الرسائل عند فتح الشاشة
+    controller.fetchMessages(widget.chat.userId);
   }
 
   @override
@@ -28,34 +31,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _sendMessage() {
-    final text = _textController.text;
-    if (text.trim().isEmpty) return;
+    final text = _textController.text.trim();
+    if (text.isEmpty) return;
 
-    final message = Message(
-      text: text,
-      time: "${DateTime.now().hour}:${DateTime.now().minute}",
-      isMe: true,
-    );
-
-    setState(() {
-      _messages.insert(0, message);
-      _textController.clear();
-    });
-
-    _simulateReply();
-  }
-
-  void _simulateReply() {
-    Future.delayed(const Duration(seconds: 1), () {
-      final reply = Message(
-        text: "تمام، وصلتني رسالتك.",
-        time: "${DateTime.now().hour}:${DateTime.now().minute}",
-        isMe: false,
-      );
-      setState(() {
-        _messages.insert(0, reply);
-      });
-    });
+    controller.sendMessage(text, widget.chat.userId);
+    _textController.clear();
   }
 
   @override
@@ -75,22 +55,40 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.videocam_outlined), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.call_outlined), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.call_outlined),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.videocam_outlined),
+            onPressed: () {},
+          ),
         ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              reverse: true,
-              padding: const EdgeInsets.all(12),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _MessageBubble(message: message);
-              },
-            ),
+            child: Obx(() {
+              if (controller.isLoadingMessages.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (controller.messages.isEmpty) {
+                return const Center(
+                  child: Text('لا توجد رسائل بعد'),
+                );
+              }
+
+              return ListView.builder(
+                reverse: true,
+                padding: const EdgeInsets.all(12),
+                itemCount: controller.messages.length,
+                itemBuilder: (context, index) {
+                  final Message message = controller.messages[index];
+                  return _MessageBubble(message: message);
+                },
+              );
+            }),
           ),
           _TextInputArea(
             textController: _textController,
@@ -102,6 +100,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 }
 
+// ============================================================================
+// Message Bubble
+// ============================================================================
 class _MessageBubble extends StatelessWidget {
   final Message message;
 
@@ -142,21 +143,31 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
+// ============================================================================
+// Text Input Area
+// ============================================================================
 class _TextInputArea extends StatelessWidget {
   final TextEditingController textController;
   final VoidCallback onSend;
 
-  const _TextInputArea({required this.textController, required this.onSend});
+  const _TextInputArea({
+    required this.textController,
+    required this.onSend,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       color: Colors.white,
       child: Row(
         children: [
-          IconButton(icon: const Icon(Icons.add), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {},
+          ),
           Expanded(
             child: TextField(
               controller: textController,
@@ -169,7 +180,7 @@ class _TextInputArea extends StatelessWidget {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16),
+                const EdgeInsets.symmetric(horizontal: 16),
               ),
               onSubmitted: (_) => onSend(),
             ),

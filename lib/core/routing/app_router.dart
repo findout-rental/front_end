@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:project/bindings/booking_binding.dart';
+import 'package:project/bindings/otp_binding.dart';
 
 // Models
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/chat_model.dart';
+import 'package:project/features/auth/otp_page.dart';
 
 // Auth
 import 'package:project/features/auth/sign_in_page.dart';
 import 'package:project/features/auth/sign_up_page.dart';
 import 'package:project/features/auth/pending_approval_page.dart';
+import 'package:project/features/auth/forgot_password_page.dart';
+import 'package:project/features/auth/reset_password_page.dart';
 
 // Home & Onboarding
 import 'package:project/features/home/home_page.dart';
@@ -27,13 +30,15 @@ import 'package:project/features/apartment/add_apartment/add_apartment_page.dart
 import 'package:project/features/booking/booking_page.dart';
 import 'package:project/features/notification/notification_screen.dart';
 
-// Bindings
-import 'package:project/bindings/auth_binding.dart';
+// Profile
+import 'package:project/features/profile/presentation/screens/edit_profile_page.dart';
 
 class AppRouter {
   AppRouter._();
 
+  // ===============================
   // Route names
+  // ===============================
   static const String onboarding = '/';
   static const String signIn = '/signIn';
   static const String signUp = '/signUp';
@@ -45,116 +50,94 @@ class AppRouter {
   static const String booking = '/booking';
   static const String notifications = '/notifications';
   static const String addApartment = '/addApartment';
+  static const String editProfile = '/editProfile';
+  static const String forgotPassword = '/forgotPassword';
+  static const String resetPassword = '/resetPassword';
+    static const String otp = '/otp';
 
-  // -------------------------------
-  // GetX Routes (Navigator 2 style)
-  // -------------------------------
+
+  // ===============================
+  // GetX Routes
+  // ===============================
   static final routes = [
-    GetPage(
-      name: onboarding,
-      page: () => const OnboardingScreen(),
-    ),
-    GetPage(
-      name: signIn,
-      page: () => const SignInPage(),
-      binding: AuthBinding(),
-    ),
-    GetPage(
-      name: signUp,
-      page: () => const SignUpPage(),
-    ),
-    GetPage(
-      name: pendingApproval,
-      page: () => const PendingApprovalPage(),
-    ),
-    GetPage(
-      name: home,
-      page: () => const HomePage(),
-    ),
-    GetPage(
-      name: chats,
-      page: () => const ChatsScreen(),
-    ),
+    GetPage(name: onboarding, page: () => const OnboardingScreen()),
+    GetPage(name: signIn, page: () => const SignInPage()),
+    GetPage(name: signUp, page: () => const SignUpPage()),
+    GetPage(name: pendingApproval, page: () => const PendingApprovalPage()),
+    GetPage(name: home, page: () => const HomePage()),
+    GetPage(name: chats, page: () => const ChatsScreen()),
+
     GetPage(
       name: chatDetail,
       page: () => ChatDetailScreen(chat: Get.arguments as Chat),
     ),
+
     GetPage(
       name: apartmentDetail,
-      page: () =>
-          ApartmentDetailPage(apartment: Get.arguments as Apartment),
+      page: () => ApartmentDetailPage(
+        apartment: Get.arguments as Apartment,
+      ),
     ),
+
     GetPage(
       name: booking,
-      page: () => BookingPage(apartment: Get.arguments as Apartment),
+      page: () => BookingPage(
+        apartment: Get.arguments as Apartment,
+      ),
     ),
-    GetPage(
-      name: addApartment,
-      page: () => const AddApartmentPage(),
-    ),
-    GetPage(
-      name: notifications,
-      page: () => NotificationsScreen(),
-    ),
-    GetPage(
-  name: AppRouter.home,
-  page: () => const HomePage(),
-  bindings: [
-    AuthBinding(),
-    BookingBinding(),
-  ],
-),
 
-
+    GetPage(name: addApartment, page: () => const AddApartmentPage()),
+    GetPage(name: notifications, page: () => NotificationsScreen()),
+    GetPage(name: editProfile, page: () => const EditProfilePage()),
+    GetPage(name: forgotPassword, page: () => const ForgotPasswordPage()),
+    GetPage(name: resetPassword, page: () => const ResetPasswordPage()),
+    GetPage(
+      name: AppRouter.otp,
+      page: () => const OtpPage(),
+      binding: OtpBinding(),
+    ),
   ];
 
-  // --------------------------------
-  // Legacy Navigator (MaterialApp)
-  // --------------------------------
+  // ===============================
+  // Legacy Navigator (Optional)
+  // ===============================
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case onboarding:
-        return MaterialPageRoute(builder: (_) => const OnboardingScreen());
+        return _page(const OnboardingScreen());
       case signIn:
-        return MaterialPageRoute(builder: (_) => const SignInPage());
+        return _page(const SignInPage());
       case signUp:
-        return MaterialPageRoute(builder: (_) => const SignUpPage());
+        return _page(const SignUpPage());
       case pendingApproval:
-        return MaterialPageRoute(
-            builder: (_) => const PendingApprovalPage());
+        return _page(const PendingApprovalPage());
       case home:
-        return MaterialPageRoute(builder: (_) => const HomePage());
+        return _page(const HomePage());
       case chats:
-        return MaterialPageRoute(builder: (_) => const ChatsScreen());
+        return _page(const ChatsScreen());
       case notifications:
-        return MaterialPageRoute(builder: (_) => NotificationsScreen());
+        return _page(NotificationsScreen());
       case addApartment:
-        return MaterialPageRoute(builder: (_) => const AddApartmentPage());
+        return _page(const AddApartmentPage());
 
       case chatDetail:
         final args = settings.arguments;
         if (args is Chat) {
-          return MaterialPageRoute(
-            builder: (_) => ChatDetailScreen(chat: args),
-          );
+          return _page(ChatDetailScreen(chat: args));
         }
         return _errorRoute('Chat expected, got ${args.runtimeType}');
 
       case apartmentDetail:
         final args = settings.arguments;
         if (args is Apartment) {
-          return MaterialPageRoute(
-            builder: (_) => ApartmentDetailPage(apartment: args),
-          );
+          return _page(ApartmentDetailPage(apartment: args));
         }
         return _errorRoute('Apartment expected, got ${args.runtimeType}');
 
       case booking:
         final args = settings.arguments;
         if (args is Apartment) {
-          return MaterialPageRoute(
-            builder: (_) => BookingPage(apartment: args),
-          );
+          return _page(BookingPage(apartment: args));
         }
         return _errorRoute('Apartment expected, got ${args.runtimeType}');
 
@@ -162,6 +145,9 @@ class AppRouter {
         return _errorRoute('No route defined for ${settings.name}');
     }
   }
+
+  static MaterialPageRoute _page(Widget child) =>
+      MaterialPageRoute(builder: (_) => child);
 
   static Route<dynamic> _errorRoute(String message) {
     return MaterialPageRoute(

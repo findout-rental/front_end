@@ -5,7 +5,10 @@ import 'package:project/shared_widgets/date_formatter.dart';
 class NotificationsListView extends StatelessWidget {
   final List<NotificationModel> notifications;
 
-  const NotificationsListView({super.key, required this.notifications});
+  const NotificationsListView({
+    super.key,
+    required this.notifications,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,37 +39,65 @@ class NotificationsListView extends StatelessWidget {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Section title
+  // ---------------------------------------------------------------------------
   Widget _sectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
         title,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
       ),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Notification item
+  // ---------------------------------------------------------------------------
   Widget _notificationTile(NotificationModel notification) {
+    final bool isRead = notification.isRead;
+
     return ListTile(
+      // ✅ تمييز الإشعارات غير المقروءة
+      tileColor: isRead ? null : Colors.blue.withOpacity(0.05),
       contentPadding: EdgeInsets.zero,
-      leading: const CircleAvatar(
-        backgroundColor: Color(0xFFEDE7F6),
-        child: Icon(Icons.notifications_outlined, color: Colors.deepPurple),
+      leading: CircleAvatar(
+        backgroundColor:
+        isRead ? Colors.grey.shade300 : const Color(0xFFEDE7F6),
+        child: Icon(
+          Icons.notifications_outlined,
+          color: isRead ? Colors.grey.shade600 : Colors.deepPurple,
+        ),
       ),
-      title: Text(notification.title, style: const TextStyle(fontSize: 14)),
+      title: Text(
+        notification.title,
+        style: const TextStyle(fontSize: 14),
+      ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(notification.subtitle, style: const TextStyle(fontSize: 12)),
+          Text(
+            notification.subtitle,
+            style: const TextStyle(fontSize: 12),
+          ),
           const SizedBox(height: 2),
           Text(
-            formatDate(notification.date), // 👈 هون بالضبط
-            style: const TextStyle(fontSize: 10, color: Colors.grey),
+            formatDate(notification.date),
+            style: const TextStyle(
+              fontSize: 10,
+              color: Colors.grey,
+            ),
           ),
         ],
       ),
       onTap: () {
-        // handle click later
+        // 🔜 لاحقًا:
+        // - mark as read
+        // - navigate if needed
       },
     );
   }

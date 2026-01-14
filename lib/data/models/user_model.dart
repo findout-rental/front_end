@@ -1,19 +1,21 @@
 import 'dart:io';
 
-enum UserRole { tenant, owner }
+/// أدوار المستخدم داخل التطبيق
+enum UserRole {
+  tenant,
+  owner,
+  unknown,
+}
+
 class UserModel {
   final String uid;
-
   final String fullName;
-
   final String phone;
-
   final UserRole role;
-
   final DateTime? dateOfBirth;
-
   final String? profileImageUrl;
 
+  /// صورة محلية (للاستخدام المؤقت فقط – لا تُخزَّن في السيرفر)
   final File? profileImageFile;
 
   final DateTime createdAt;
@@ -29,6 +31,50 @@ class UserModel {
     this.profileImageFile,
   });
 
+  // ===============================
+  // FACTORIES
+  // ===============================
+
+  /// تحويل JSON القادم من الخادم إلى UserModel
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    UserRole parseRole(String? roleString) {
+      switch (roleString) {
+        case 'owner':
+          return UserRole.owner;
+        case 'tenant':
+          return UserRole.tenant;
+        default:
+          return UserRole.unknown;
+      }
+    }
+
+    String parseFullName(String? first, String? last, String? full) {
+      if (full != null && full.isNotEmpty) return full;
+      final f = first ?? '';
+      final l = last ?? '';
+      return '$f $l'.trim();
+    }
+
+    return UserModel(
+      uid: json['id']?.toString() ?? json['uid']?.toString() ?? '',
+      fullName: parseFullName(
+        json['first_name'],
+        json['last_name'],
+        json['full_name'],
+      ),
+      phone: json['mobile_number'] ?? json['phone'] ?? '',
+      role: parseRole(json['role']),
+      profileImageUrl: json['profile_image_url'],
+      dateOfBirth: json['date_of_birth'] != null
+          ? DateTime.tryParse(json['date_of_birth'])
+          : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+
+  /// مستخدم وهمي (للتجربة والـ UI)
   factory UserModel.dummy() {
     return UserModel(
       uid: 'dummy-uid-12345',
@@ -39,4 +85,24 @@ class UserModel {
       profileImageUrl: 'https://i.pravatar.cc/150?img=53',
     );
   }
+
+  // ===============================
+  // SERIALIZATION (للتحديثات)
+  // ===============================
+  Map<String, dynamic> toJson() {
+    return {
+      'id': uid,
+      'full_name': fullName,
+      'mobile_number': phone,
+      'role': role.name,
+      'date_of_birth': dateOfBirth?.toIso8601String(),
+      'profile_image_url': profileImageUrl,
+    };
+  }
+
+  // ===============================
+  // HELPERS (UI-friendly)
+  // ===============================
+  bool get isTenant => role == UserRole.tenant;
+  bool get isOwner => role == UserRole.owner;
 }

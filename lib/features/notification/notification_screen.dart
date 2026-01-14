@@ -1,48 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:project/controllers/notification_controller.dart';
 import 'package:project/features/notification/empty_notifications_view.dart';
 import 'package:project/features/notification/notifications_list_view.dart';
-import 'package:project/data/models/notification_model.dart';
 
 class NotificationsScreen extends StatelessWidget {
-  NotificationsScreen({super.key});
-
-  /// فقط للتجربة
-  final bool hasNotifications = false; // غيّرها true / false
+  const NotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final List<NotificationModel> notifications = hasNotifications
-        ? [
-      NotificationModel(
-        title: 'تهانينا',
-        subtitle: 'تم تفعيل إعلانك بنجاح',
-        date: DateTime.now(), // Today
-      ),
-      NotificationModel(
-        title: 'رسالة جديدة',
-        subtitle: 'لديك رسالة جديدة',
-        date: DateTime.now().subtract(const Duration(days: 1)), // Yesterday
-      ),
-      NotificationModel(
-        title: 'تنبيه',
-        subtitle: 'تم تحديث سياسة الاستخدام',
-        date: DateTime.now().subtract(const Duration(days: 5)), // Earlier
-      ),
-    ]
-        : <NotificationModel>[];
+    // ✅ إنشاء المراقب مرة واحدة عند فتح الصفحة
+    final NotificationController controller =
+    Get.put(NotificationController());
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('الإشعارات'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        actions: [
+          // زر تعليم الكل كمقروء
+          Obx(
+                () => controller.notifications.isEmpty
+                ? const SizedBox.shrink()
+                : TextButton(
+              onPressed: controller.markAllAsRead,
+              child: const Text('Mark all as read'),
+            ),
+          ),
+        ],
       ),
-      body: notifications.isEmpty
-          ? const EmptyNotificationsView()
-          : NotificationsListView(notifications: notifications),
+      body: Obx(() {
+        // حالة التحميل الأولى
+        if (controller.isLoading.value &&
+            controller.notifications.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // لا يوجد إشعارات
+        if (controller.notifications.isEmpty) {
+          return const EmptyNotificationsView();
+        }
+
+        // عرض الإشعارات
+        return NotificationsListView(
+          notifications: controller.notifications,
+        );
+      }),
     );
   }
 }
-
