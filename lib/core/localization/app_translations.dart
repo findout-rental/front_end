@@ -60,6 +60,8 @@ class AppTranslations extends Translations {
       'reset_password': 'Reset Password',
       'otp_code': 'OTP Code',
       'new_password': 'New Password',
+      'please_fill_all_required_fields_correctly.':
+          'Please fill all required fields correctly.',
 
       // --- Profile ---
       'edit_profile': 'Edit Profile',
@@ -117,6 +119,7 @@ class AppTranslations extends Translations {
       'no_notifications_yet': 'No notifications yet',
       'notifications_description':
           'Any notification sent will appear here\nand you can follow up at any time',
+      'error': 'Erorr',
     },
 
     // =====================================================================
@@ -229,6 +232,8 @@ class AppTranslations extends Translations {
       'no_notifications_yet': 'لا توجد إشعارات بعد',
       'notifications_description':
           'أي إشعار سيتم إرساله سيظهر هنا\nويمكنك متابعته في أي وقت',
+
+      'error': 'خطأ',
     },
   };
 }

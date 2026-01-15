@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 // Models
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/booking_model.dart';
-import 'package:project/data/models/chat_model.dart';
 import 'package:project/features/auth/forgot_password_page.dart';
 import 'package:project/features/auth/reset_password_page.dart';
 
@@ -19,8 +18,6 @@ import 'package:project/features/notification/notification_screen.dart';
 import 'package:project/features/onboarding/onboarding_screen.dart';
 
 // Chat
-import 'package:project/features/chat/screens/chats_screen.dart';
-import 'package:project/features/chat/screens/chat_detail_screen.dart';
 
 // Apartment
 import 'package:project/features/apartment/apartment_detail_page.dart';
@@ -28,7 +25,6 @@ import 'package:project/features/apartment/add_apartment/add_apartment_page.dart
 
 // Booking & Notifications
 import 'package:project/features/booking/booking_page.dart';
-import 'package:project/bindings/booking_binding.dart';
 
 // Bindings
 import 'package:project/bindings/auth_binding.dart';

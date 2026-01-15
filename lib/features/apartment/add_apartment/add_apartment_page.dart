@@ -27,10 +27,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
   // --- DEPENDENCIES ---
   final _picker = ImagePicker();
 
-  // ❌ السطر القديم الذي تم حذفه
-  // final ApartmentService _apartmentService = Get.find<ApartmentService>();
-
-  // ✅ التعريف الجديد (سيتم تهيئته لاحقًا)
   late final ApartmentService _apartmentService;
 
   // --- FORM KEYS & CONTROLLERS ---
@@ -55,7 +51,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
 
   @override
   void dispose() {
-    // ... (dispose methods remain the same)
     _titleController.dispose();
     _personController.dispose();
     _descriptionController.dispose();
@@ -91,8 +86,8 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     if (!_step1FormKey.currentState!.validate() ||
         !_step2FormKey.currentState!.validate()) {
       Get.snackbar(
-        'Error',
-        'Please fill all required fields correctly.',
+        'error'.tr,
+        'please_fill_all_required_fields_correctly.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;

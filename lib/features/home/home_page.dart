@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:project/controllers/apartment_controller.dart';
 import 'package:project/controllers/home_controller.dart'; // ✅ استيراد جديد
 import 'package:project/core/routing/app_router.dart';
-import 'package:project/data/models/apartment_model.dart';
 import 'package:project/shared_widgets/filter_bottom_sheet.dart';
 import 'package:project/features/my_apartments/presentation/screens/my_apartments_page.dart';
 import 'package:project/features/profile/profile_page.dart';

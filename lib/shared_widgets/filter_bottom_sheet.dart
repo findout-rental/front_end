@@ -227,7 +227,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             _sectionTitle('الموقع'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedGovernorate,
+              initialValue: _selectedGovernorate,
               hint: const Text('اختر المحافظة'),
               items: _governorateCityMap.keys
                   .map((gov) => DropdownMenuItem(value: gov, child: Text(gov)))
@@ -240,7 +240,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             if (_cities.isNotEmpty) ...[
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedCity,
+                initialValue: _selectedCity,
                 hint: const Text('اختر المدينة'),
                 items: _cities
                     .map(
