@@ -1,9 +1,8 @@
-// lib/bindings/initial_binding.dart
-
 import 'package:get/get.dart';
 import 'package:project/controllers/apartment_controller.dart';
 import 'package:project/controllers/auth_controller.dart';
 import 'package:project/controllers/booking_controller.dart';
+import 'package:project/controllers/chat_controller.dart'; // تأكد من وجود هذا الاستيراد
 import 'package:project/controllers/home_controller.dart';
 import 'package:project/controllers/language_controller.dart';
 import 'package:project/controllers/theme_controller.dart';
@@ -15,39 +14,61 @@ import 'package:project/services/booking_service.dart';
 import 'package:project/services/chat_service.dart';
 import 'package:project/services/favorite_service.dart';
 import 'package:project/services/notification_service.dart';
+import 'package:project/services/websocket_service.dart'; // تأكد من وجود هذا الاستيراد
 
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
-    // --- 1. CORE & SERVICES (Lazy Loaded) ---
-    // يتم تسجيلها أولاً بحيث تكون متاحة للمراقبين.
-    // `lazyPut` يعني أنها لن تُنشأ إلا عند أول استخدام.
-    Get.lazyPut(() => DioClient(), fenix: true);
-    Get.lazyPut(() => AuthStorage(), fenix: true);
-    Get.lazyPut(() => AuthService(Get.find()), fenix: true);
-    Get.lazyPut(() => ApartmentService(Get.find()), fenix: true);
-    Get.lazyPut(() => FavoriteService(Get.find()), fenix: true);
-    Get.lazyPut(() => BookingService(Get.find()), fenix: true);
+    // ===============================
+    // CORE
+    // ===============================
+    Get.put<DioClient>(DioClient(), permanent: true);
+    Get.put<AuthStorage>(AuthStorage(), permanent: true);
 
-    Get.lazyPut(() => ChatService(Get.find()), fenix: true);
-    // Get.lazyPut(() => WebsocketService(), fenix: true);
-    Get.lazyPut(() => NotificationService(Get.find()), fenix: true);
+    // ===============================
+    // SERVICES
+    // ===============================
+    Get.put<AuthService>(AuthService(Get.find()), permanent: true);
+    Get.put<ApartmentService>(ApartmentService(Get.find()), permanent: true);
+    Get.put<FavoriteService>(FavoriteService(Get.find()), permanent: true);
+    Get.put<BookingService>(BookingService(Get.find()), permanent: true);
+    Get.put<ChatService>(ChatService(Get.find()), permanent: true);
+    Get.put<WebsocketService>(WebsocketService(), permanent: true);
+    Get.put<NotificationService>(NotificationService(Get.find()), permanent: true);
 
-    // --- 2. CONTROLLERS (Loaded Immediately & Permanently) ---
-    // يتم تسجيلها باستخدام `put` لإنشائها فورًا وجعلها متاحة دائمًا.
-    // نقوم بحقن الخدمات المسجلة أعلاه بشكل صريح في المنشئ.
+    // ===============================
+    // CONTROLLERS (GLOBAL)
+    // ===============================
+    Get.put<ThemeController>(ThemeController(), permanent: true);
+    Get.put<HomeController>(HomeController(), permanent: true);
+    Get.put<LanguageController>(LanguageController(), permanent: true); // تم الاحتفاظ به من فرعك
 
-    // المراقبين الذين لا يعتمدون على خدمات أخرى
-    Get.put(ThemeController(), permanent: true);
-    Get.put(HomeController(), permanent: true);
-    Get.put(LanguageController(), permanent: true);
-    // المراقبين الذين يعتمدون على خدمات
-    Get.put(AuthController(Get.find(), Get.find()), permanent: true);
-    Get.put(BookingController(Get.find()), permanent: true);
-    Get.put(ApartmentController(Get.find(), Get.find()), permanent: true);
-    // Get.put(
-    //   ChatController(Get.find(), Get.find(), Get.find()),
-    //   permanent: true,
+    Get.put<AuthController>(
+      AuthController(
+        Get.find<AuthService>(),
+        Get.find<AuthStorage>(),
+      ),
+      permanent: true,
+    );
+    Get.put<ApartmentController>(
+      ApartmentController(
+        Get.find<ApartmentService>(),
+        Get.find<FavoriteService>(),
+        Get.find<AuthService>(),
+      ),
+      permanent: true,
+    );
+    Get.put<BookingController>(
+      BookingController(Get.find<BookingService>()),
+      permanent: true,
     // );
+    // Get.put<ChatController>(
+    //   ChatController(
+    //     Get.find<ChatService>(),
+    //     Get.find<WebsocketService>(),
+    //     Get.find<AuthController>(),
+    //   ),
+    //   permanent: true,
+    );
   }
 }

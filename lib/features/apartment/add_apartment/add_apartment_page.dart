@@ -1,11 +1,10 @@
-// lib/features/apartment/add_apartment_page.dart
-
 import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide MultipartFile, FormData;
+import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:image_picker/image_picker.dart';
-import 'package:project/services/apartment_service.dart';
+import 'package:project/controllers/apartment_controller.dart';
 import 'package:project/shared_widgets/custom_text_field.dart';
 
 class AddApartmentPage extends StatefulWidget {
@@ -16,23 +15,20 @@ class AddApartmentPage extends StatefulWidget {
 }
 
 class _AddApartmentPageState extends State<AddApartmentPage> {
-  // --- LOCAL STATE ---
   int _currentStep = 0;
-  bool _isLoading = false;
+  final _picker = ImagePicker();
   final List<File> _apartmentImages = [];
   int _bedrooms = 1;
   int _bathrooms = 1;
   bool _hasBalcony = false;
+  bool _hasAC = false;
+  bool _hacInternet = false;
 
-  // --- DEPENDENCIES ---
-  final _picker = ImagePicker();
+  // Merged: Removed duplicate/obsolete properties from HEAD branch.
+  // The OTP branch's architecture is cleaner.
 
-  late final ApartmentService _apartmentService;
-
-  // --- FORM KEYS & CONTROLLERS ---
   final _step1FormKey = GlobalKey<FormState>();
   final _step2FormKey = GlobalKey<FormState>();
-  // ... (controllers remain the same)
   final _titleController = TextEditingController();
   final _personController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -40,14 +36,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
   final _governorateController = TextEditingController();
   final _cityController = TextEditingController();
   final _areaController = TextEditingController();
-
-  // ✅ المكان الصحيح لـ Get.find()
-  @override
-  void initState() {
-    super.initState();
-    // يتم استدعاء هذا بعد أن يكون الويدجت جاهزًا
-    _apartmentService = Get.find<ApartmentService>();
-  }
 
   @override
   void dispose() {
@@ -61,19 +49,65 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // Helpers (All helper methods like _pickImages, _removeImage, _submitForm remain exactly the same)
-  // ---------------------------------------------------------------------------
+  Future<FormData> _buildFormData() async {
+    final amenities = <String>[];
+    if (_hasBalcony) amenities.add('Balcony');
+    if (_hasAC) amenities.add('Air Conditioning');
+    if (_hacInternet) amenities.add('WiFi');
+
+    final formData = FormData();
+    // ---------- FIELDS ----------
+    formData.fields.addAll([
+      MapEntry('title', _titleController.text.trim()),
+      MapEntry('description', _descriptionController.text.trim()),
+      MapEntry('governorate', _governorateController.text.trim()),
+      MapEntry('city', _cityController.text.trim()),
+      MapEntry(
+        'address',
+        '${_governorateController.text.trim()}, ${_cityController.text.trim()}',
+      ),
+      MapEntry('nightly_price', _priceController.text.trim()),
+      MapEntry(
+        'monthly_price',
+        ((double.tryParse(_priceController.text) ?? 0) * 30).toString(),
+      ),
+      MapEntry('living_rooms', '1'),
+      MapEntry('size', _areaController.text.trim()),
+      MapEntry('bedrooms', _bedrooms.toString()),
+      MapEntry('bathrooms', _bathrooms.toString()),
+      MapEntry('max_guests', (_bedrooms * 2).toString()),
+    ]);
+    // ---------- AMENITIES ARRAY ----------
+    for (int i = 0; i < amenities.length; i++) {
+      formData.fields.add(MapEntry('amenities[$i]', amenities[i]));
+    }
+    // ---------- PHOTOS ARRAY (STRINGS) ----------
+    for (int i = 0; i < _apartmentImages.length; i++) {
+      final bytes = await _apartmentImages[i].readAsBytes();
+      final base64Image = base64Encode(bytes);
+      formData.fields.add(MapEntry('photos[$i]', base64Image));
+    }
+    return formData;
+  }
 
   Future<void> _pickImages() async {
-    final List<XFile> pickedFiles = await _picker.pickMultiImage(
-      imageQuality: 80,
-    );
-    if (pickedFiles.isNotEmpty) {
-      setState(() {
-        _apartmentImages.addAll(pickedFiles.map((file) => File(file.path)));
-      });
-    }
+    final pickedFiles = await _picker.pickMultiImage(imageQuality: 80);
+    if (pickedFiles.isEmpty) return;
+    setState(() {
+      final remaining = 10 - _apartmentImages.length;
+      if (remaining <= 0) {
+        Get.snackbar('تنبيه', 'مسموح بحد أقصى 10 صور فقط');
+        return;
+      }
+      final toAdd = pickedFiles
+          .take(remaining)
+          .map((x) => File(x.path))
+          .toList();
+      _apartmentImages.addAll(toAdd);
+      if (pickedFiles.length > remaining) {
+        Get.snackbar('تنبيه', 'تم إضافة $remaining صور فقط لأن الحد الأقصى 10');
+      }
+    });
   }
 
   void _removeImage(int index) {
@@ -82,130 +116,39 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     });
   }
 
-  Future<void> _submitForm() async {
-    if (!_step1FormKey.currentState!.validate() ||
-        !_step2FormKey.currentState!.validate()) {
-      Get.snackbar(
-        'error'.tr,
-        'please_fill_all_required_fields_correctly.'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-    if (_apartmentImages.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please upload at least one image for the apartment.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      List<MultipartFile> imageFiles = [];
-      for (var file in _apartmentImages) {
-        imageFiles.add(
-          await MultipartFile.fromFile(
-            file.path,
-            filename: file.path.split('/').last,
-          ),
-        );
-      }
-
-      final formData = FormData.fromMap({
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'price_per_month': _priceController.text,
-        'governorate': _governorateController.text,
-        'city': _cityController.text,
-        'area': _areaController.text,
-        'bedrooms': _bedrooms,
-        'bathrooms': _bathrooms,
-        'has_balcony': _hasBalcony,
-        'images[]': imageFiles,
-      });
-
-      await _apartmentService.addApartment(formData);
-
-      Get.back();
-      Get.snackbar(
-        'Success',
-        'Your apartment has been added successfully!',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to add apartment. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      print("Add Apartment Error: $e");
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // UI Build Methods (All build methods like build, _buildSteps, _buildStep1, etc. remain exactly the same)
-  // ---------------------------------------------------------------------------
+  // Merged: Removed the old _submitForm() function from HEAD.
+  // The new logic is correctly placed in the Stepper's onStepContinue.
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('أضف شقتك')),
       body: Stepper(
-        controlsBuilder: (context, details) {
-          final isLastStep = _currentStep == _buildSteps().length - 1;
-          return Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: Row(
-              children: <Widget>[
-                ElevatedButton(
-                  onPressed: details.onStepContinue,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(isLastStep ? 'إرسال' : 'التالي'),
-                ),
-                if (_currentStep > 0)
-                  TextButton(
-                    onPressed: details.onStepCancel,
-                    child: const Text('رجوع'),
-                  ),
-              ],
-            ),
-          );
-        },
         currentStep: _currentStep,
-        onStepContinue: () {
-          if (_isLoading) return;
-
-          final isLastStep = _currentStep == _buildSteps().length - 1;
-
-          if (isLastStep) {
-            _submitForm();
-          } else {
-            if (_currentStep == 0 && _step1FormKey.currentState!.validate()) {
-              setState(() => _currentStep += 1);
-            } else if (_currentStep == 1 &&
-                _step2FormKey.currentState!.validate()) {
+        onStepContinue: () async {
+          if (_currentStep == 0) {
+            if (_step1FormKey.currentState!.validate()) {
               setState(() => _currentStep += 1);
             }
+          } else if (_currentStep < 2) {
+            setState(() => _currentStep += 1);
+          } else {
+            // ✅ Last step: Validate and submit via controller
+            if (_apartmentImages.isEmpty) {
+              Get.snackbar('خطأ', 'لازم تضيف صورة واحدة على الأقل');
+              return;
+            }
+            if (_apartmentImages.length > 10) {
+              Get.snackbar('خطأ', 'الحد الأقصى 10 صور');
+              return;
+            }
+            final controller = Get.find<ApartmentController>();
+            final formData = await _buildFormData();
+            final ok = await controller.addApartment(formData);
+            if (ok) Navigator.pop(context);
           }
         },
-        onStepCancel: _currentStep > 0 && !_isLoading
+        onStepCancel: _currentStep > 0
             ? () => setState(() => _currentStep -= 1)
             : null,
         steps: _buildSteps(),
@@ -213,8 +156,8 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     );
   }
 
-  // ... (The rest of the build methods are unchanged)
-  // ... (بقية دوال بناء الواجهة تبقى كما هي)
+  // ... All the _buildStep...() and other UI methods remain unchanged ...
+  // (Paste the rest of your UI build methods here, they are not in conflict)
   List<Step> _buildSteps() {
     return [
       Step(
@@ -233,7 +176,7 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
         title: const Text('صور الشقة'),
         content: _buildStep3(),
         isActive: _currentStep >= 2,
-        state: _currentStep >= 2 ? StepState.editing : StepState.indexed,
+        state: _currentStep == 2 ? StepState.editing : StepState.indexed,
       ),
     ];
   }
@@ -269,21 +212,21 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
           const SizedBox(height: 16),
           CustomTextField(
             controller: _governorateController,
-            hint: 'عنوان المحافظة (مثال: الرياض)',
+            hint: 'عنوان المحافظة (مثال: سوريا)',
             icon: Icons.location_city,
             validator: (v) => v!.isEmpty ? 'هذا الحقل مطلوب' : null,
           ),
           const SizedBox(height: 16),
           CustomTextField(
             controller: _cityController,
-            hint: 'عنوان المدينة (مثال: القصيم)',
+            hint: 'عنوان المدينة (مثال: دمشق)',
             icon: Icons.location_city_rounded,
             validator: (v) => v!.isEmpty ? 'هذا الحقل مطلوب' : null,
           ),
           const SizedBox(height: 16),
           CustomTextField(
             controller: _priceController,
-            hint: 'السعر / شهري (بالريال)',
+            hint: 'السعر / شهري (بالدولار)',
             icon: Icons.attach_money,
             keyboardType: TextInputType.number,
             validator: (v) => v!.isEmpty ? 'هذا الحقل مطلوب' : null,
@@ -300,8 +243,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('الميزات', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -331,10 +272,27 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
             validator: (v) => (v?.isEmpty ?? true) ? 'الحقل مطلوب' : null,
           ),
           const Divider(height: 24),
+          const SizedBox(height: 16),
+          Text('الميزات', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 10),
           CheckboxListTile(
             title: const Text('يوجد شرفة'),
             value: _hasBalcony,
             onChanged: (value) => setState(() => _hasBalcony = value ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+          CheckboxListTile(
+            title: const Text('يوجد تكييف'),
+            value: _hasAC,
+            onChanged: (value) => setState(() => _hasAC = value ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+          CheckboxListTile(
+            title: const Text('يوجد إنترنت'),
+            value: _hacInternet,
+            onChanged: (value) => setState(() => _hacInternet = value ?? false),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
           ),

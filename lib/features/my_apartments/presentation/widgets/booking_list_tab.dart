@@ -1,5 +1,3 @@
-// lib/features/my_apartments/presentation/widgets/booking_list_tab.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/controllers/booking_controller.dart';
@@ -14,26 +12,23 @@ class BookingListTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (bookings.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'no_bookings_found',
-          style: TextStyle(color: Colors.grey),
+          'no_bookings_found'.tr, // Use translation key
+          style: const TextStyle(color: Colors.grey),
         ),
       );
     }
-
-    // ✅ الوصول إلى المراقب لاستخدامه في زر الإلغاء
+    // ✅ Get controller without creating a new one
     final BookingController controller = Get.find<BookingController>();
 
     return ListView.builder(
       itemCount: bookings.length,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemBuilder: (context, index) {
         final booking = bookings[index];
-
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          // ✅ استخدام Card لتحسين التصميم
+          padding: const EdgeInsets.only(bottom: 12),
           child: Card(
             elevation: 2,
             clipBehavior: Clip.antiAlias,
@@ -43,12 +38,10 @@ class BookingListTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. عرض معلومات الشقة باستخدام الويدجت المشترك
-                // لا نمرر onFavoriteToggle لأنه غير ذي صلة هنا
+                // Apartment info
                 ApartmentListItemWidget(apartment: booking.apartment),
-
-                // 2. إضافة قسم يعرض حالة الحجز أو زر الإلغاء
-                _buildBookingStatusSection(context, booking, controller),
+                // Booking status / action buttons
+                _BookingStatusSection(booking: booking, controller: controller),
               ],
             ),
           ),
@@ -56,58 +49,62 @@ class BookingListTab extends StatelessWidget {
       },
     );
   }
+}
 
-  /// دالة مساعدة لبناء قسم الحالة أو زر الإلغاء
-  Widget _buildBookingStatusSection(
-    BuildContext context,
-    BookingModel booking,
-    BookingController controller,
-  ) {
+/// 🔹 Separate widget for better performance and organization
+class _BookingStatusSection extends StatelessWidget {
+  final BookingModel booking;
+  final BookingController controller;
+  const _BookingStatusSection({
+    required this.booking,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    Widget statusWidget;
+    Widget content;
 
     switch (booking.status) {
       case BookingStatus.active:
-        statusWidget = Row(
+        content = Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'booking_active',
+              'booking_active'.tr, // Use translation key
               style: TextStyle(
                 color: Colors.green.shade700,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const Spacer(), // لإضافة مساحة مرنة
-            // ✅ زر التعديل الجديد
+            const Spacer(), // Flexible space
+            // Merged: Added the new "Edit" button from HEAD branch
             TextButton(
               onPressed: () {
                 Get.toNamed(
                   AppRouter.booking,
                   arguments: {
                     'apartment': booking.apartment,
-                    'booking': booking, // مرر الحجز الحالي
+                    'booking': booking, // Pass the current booking for editing
                   },
                 );
               },
-              child: const Text('edit_booking'),
+              child: Text('edit_booking'.tr),
             ),
-
             const SizedBox(width: 8),
 
-            // ✅ زر الإلغاء مع نافذة تأكيد
+            // Cancel button with confirmation dialog
             ElevatedButton(
               onPressed: () {
                 Get.defaultDialog(
-                  title: "confirm_cancellation",
-                  middleText: "are_you_sure_cancel_booking",
-                  textConfirm: "yes",
-                  textCancel: "no",
+                  title: "confirm_cancellation".tr,
+                  middleText: "are_you_sure_cancel_booking".tr,
+                  textConfirm: "yes".tr,
+                  textCancel: "no".tr,
                   buttonColor: Colors.red,
                   confirmTextColor: Colors.white,
-                  cancelTextColor: Colors.black,
                   onConfirm: () {
-                    Get.back(); // إغلاق الحوار
+                    Get.back();
                     controller.cancelBooking(booking.bookingId);
                   },
                 );
@@ -118,14 +115,15 @@ class BookingListTab extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text('cancel_booking'),
+              child: Text('cancel_booking'.tr),
             ),
           ],
         );
         break;
       case BookingStatus.completed:
-        statusWidget = Text(
-          'booking_completed',
+        // Merged: Using the translatable key from HEAD branch
+        content = Text(
+          'booking_completed'.tr,
           style: TextStyle(
             color: theme.primaryColor,
             fontWeight: FontWeight.bold,
@@ -133,8 +131,9 @@ class BookingListTab extends StatelessWidget {
         );
         break;
       case BookingStatus.cancelled:
-        statusWidget = Text(
-          'booking_cancelled',
+        // Merged: Using the translatable key from HEAD branch
+        content = Text(
+          'booking_cancelled'.tr,
           style: TextStyle(
             color: Colors.grey.shade600,
             fontWeight: FontWeight.bold,
@@ -142,12 +141,12 @@ class BookingListTab extends StatelessWidget {
         );
         break;
       default:
-        statusWidget = const SizedBox.shrink();
+        content = const SizedBox.shrink();
     }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: statusWidget,
+      child: content,
     );
   }
 }

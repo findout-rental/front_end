@@ -2,16 +2,23 @@
 
 import 'package:get/get.dart';
 import 'package:project/controllers/booking_controller.dart';
-import 'package:project/services/booking_service.dart'; // ✅ استيراد الخدمة
+import 'package:project/core/network/dio_client.dart';
+import 'package:project/services/booking_service.dart';
 
 class BookingBinding extends Bindings {
   @override
   void dependencies() {
-    // ✅ استخدم lazyPut لضمان عدم حدوث خطأ إذا تم استدعاؤه بعد InitialBinding
-    // fenix: true تعيد إنشاء المراقب إذا تم حذفه لسبب ما
-    Get.lazyPut<BookingController>(
-      () => BookingController(Get.find<BookingService>()),
-      fenix: true, 
+    // ======================
+    // Service
+    // ======================
+    Get.lazyPut<BookingService>(
+          () => BookingService(
+        Get.find<DioClient>(), // ✅ التصحيح هنا
+      ),
+      fenix: true,
     );
+
+    // ❌ لا تعيد تسجيل BookingController هنا
+    // لأنه already permanent في AuthBinding
   }
 }

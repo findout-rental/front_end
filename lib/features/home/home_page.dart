@@ -1,9 +1,7 @@
-// lib/features/home/home_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/controllers/apartment_controller.dart';
-import 'package:project/controllers/home_controller.dart'; // ✅ استيراد جديد
+import 'package:project/controllers/home_controller.dart';
 import 'package:project/core/routing/app_router.dart';
 import 'package:project/shared_widgets/filter_bottom_sheet.dart';
 import 'package:project/features/my_apartments/presentation/screens/my_apartments_page.dart';
@@ -11,31 +9,24 @@ import 'package:project/features/profile/profile_page.dart';
 import 'package:project/shared_widgets/apartment_list_item_widget.dart';
 import 'package:project/shared_widgets/custom_text_field.dart';
 
-// ✅ تم تحويله إلى StatelessWidget
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // ✅ حقن المراقبين
-    // put: ينشئ المراقب إذا لم يكن موجودًا
-    final HomeController homeController = Get.put(HomeController());
-    final ApartmentController apartmentController = Get.put(
-      ApartmentController(
-        Get.find(), // dependency 1
-        Get.find(), // dependency 2
-      ),
-    );
+    // Merged: Using the correct Get.find() approach from OTP branch.
+    final HomeController homeController = Get.find<HomeController>();
+    final ApartmentController apartmentController =
+        Get.find<ApartmentController>();
 
     final List<Widget> widgetOptions = <Widget>[
       _HomeContent(controller: apartmentController),
       _FavoritesContent(controller: apartmentController),
-      MyApartmentsPage(), // هذه الصفحة لا تزال تعتمد على Get.find() داخليًا
+      MyApartmentsPage(),
       const ProfilePage(),
     ];
 
     return Scaffold(
-      // ✅ استخدام Obx لمراقبة التبويب المحدد
       body: Obx(
         () => IndexedStack(
           index: homeController.selectedIndex.value,
@@ -50,14 +41,15 @@ class HomePage extends StatelessWidget {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
+        notchMargin: 8,
         child: Obx(
           () => Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
+              // Merged: Using the translatable keys from HEAD branch.
               _buildNavItem(context, Icons.home_filled, 'home'.tr, 0),
               _buildNavItem(context, Icons.favorite, 'favorites'.tr, 1),
-              const SizedBox(width: 48), // مساحة للزر العائم
+              const SizedBox(width: 48), // Space for FAB
               _buildNavItem(context, Icons.apartment, 'my_apartments'.tr, 2),
               _buildNavItem(context, Icons.person, 'profile'.tr, 3),
             ],
@@ -74,12 +66,11 @@ class HomePage extends StatelessWidget {
     int index,
   ) {
     final theme = Theme.of(context);
-    final HomeController homeController = Get.find(); // find: للوصول فقط
-    final bool isSelected = homeController.selectedIndex.value == index;
-
+    final HomeController controller = Get.find<HomeController>();
+    final bool isSelected = controller.selectedIndex.value == index;
     return Expanded(
       child: InkWell(
-        onTap: () => homeController.onTabTapped(index),
+        onTap: () => controller.onTabTapped(index),
         borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -139,44 +130,35 @@ class _HomeContent extends StatelessWidget {
                   child: CustomTextField(
                     hint: 'search_hint'.tr,
                     icon: Icons.search,
-                    // ✅ ربط البحث بالمراقب
-                    onChanged: (query) => controller.searchApartments(query),
+                    onChanged: controller.searchApartments, // Enabled search
                   ),
                 ),
                 const SizedBox(width: 12),
                 IconButton(
+                  icon: const Icon(Icons.filter_list),
                   onPressed: () async {
-                    // ✅ تحويلها إلى async
-                    // 1. الوصول إلى المراقب
-                    final apartmentController = Get.find<ApartmentController>();
-
-                    // 2. عرض النافذة وانتظار النتيجة
                     final filters =
                         await showModalBottomSheet<Map<String, dynamic>>(
                           context: context,
                           isScrollControlled: true,
                           builder: (_) => const FilterBottomSheet(),
                         );
-
-                    // 3. إذا أعادت النافذة فلاتر، قم بتحديث قائمة الشقق
                     if (filters != null) {
-                      apartmentController.fetchApartments(filters: filters);
+                      controller.fetchApartments(filters: filters);
                     }
                   },
-                  icon: const Icon(Icons.filter_list),
                 ),
               ],
             ),
           ),
           Expanded(
-            // ✅ استخدام Obx لمراقبة قائمة الشقق
             child: Obx(() {
               if (controller.isLoading.value &&
                   controller.filteredApartments.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
               if (controller.filteredApartments.isEmpty) {
-                return const Center(child: Text('no_apartments_found'));
+                return Center(child: Text('no_apartments_found'.tr));
               }
               return ListView.builder(
                 itemCount: controller.filteredApartments.length,
@@ -208,11 +190,11 @@ class _FavoritesContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('favorites'.tr)),
-      // ✅ استخدام Obx لمراقبة قائمة المفضلة
       body: Obx(() {
         final favoritedApartments = controller.favoriteApartments;
         if (favoritedApartments.isEmpty) {
-          return const Center(child: Text('no_apartments_found'));
+          // Merged: Using the translatable key from HEAD branch.
+          return Center(child: Text('no_apartments_found'.tr));
         }
         return ListView.builder(
           itemCount: favoritedApartments.length,

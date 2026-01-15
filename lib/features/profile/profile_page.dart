@@ -13,15 +13,19 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ThemeController themeController = Get.find<ThemeController>();
+
+    // Merged: Kept LanguageController injection and translatable title from HEAD
     final LanguageController langController = Get.find<LanguageController>();
-    final user = UserModel.dummy();
+    final user = UserModel.dummy(); // Later, this will come from AuthController
 
     return Scaffold(
       appBar: AppBar(title: Text('profile'.tr), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(20.0),
         children: [
-          /// 🧑 User Info
+          // -------------------------------------------------------------------
+          // 🧑 User Info
+          // -------------------------------------------------------------------
           Row(
             children: [
               CircleAvatar(
@@ -52,10 +56,11 @@ class ProfilePage extends StatelessWidget {
               ),
             ],
           ),
-
           const Divider(height: 50),
 
-          /// 🌙 Theme Toggle (Obx فقط هنا)
+          // -------------------------------------------------------------------
+          // 🌙 Theme Toggle
+          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.brightness_6_outlined,
@@ -72,6 +77,8 @@ class ProfilePage extends StatelessWidget {
               }),
             ),
           ),
+
+          // Merged: Kept the new language toggle feature from HEAD branch
           _buildProfileOption(
             context: context,
             icon: Icons.language_outlined,
@@ -82,13 +89,16 @@ class ProfilePage extends StatelessWidget {
                 return RoleToggle(
                   optionOneText: 'English',
                   optionTwoText: 'العربية',
-                  // ✅ التعديل: value: true  -> 'English' is selected
                   value: langController.isEnglish,
                   onChanged: (_) => langController.toggleLanguage(),
                 );
               }),
             ),
           ),
+
+          // -------------------------------------------------------------------
+          // ✏️ Edit Profile
+          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.edit_outlined,
@@ -96,15 +106,20 @@ class ProfilePage extends StatelessWidget {
             onTap: () => Get.toNamed(AppRouter.editProfile),
           ),
 
+          // -------------------------------------------------------------------
+          // ⚙️ Settings
+          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.settings_outlined,
             title: 'settings'.tr,
             onTap: () {},
           ),
-
           const Divider(height: 40),
 
+          // -------------------------------------------------------------------
+          // 🚪 Logout
+          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.logout,
@@ -123,6 +138,9 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Profile option builder
+  // ---------------------------------------------------------------------------
   Widget _buildProfileOption({
     required BuildContext context,
     required IconData icon,

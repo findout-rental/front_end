@@ -1,4 +1,3 @@
-// lib/features/auth/sign_up_page.dart
 import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:project/controllers/auth_controller.dart';
 import 'package:project/core/routing/app_router.dart';
-import 'package:project/features/auth/otp_verification_page.dart'; // ✅ استيراد الصفحة الجديدة
+// import 'package:project/features/auth/otp_verification_page.dart'; // This import seems unused now
 import 'package:project/shared_widgets/custom_text_field.dart';
 import 'package:project/shared_widgets/image_picker_box.dart';
 import 'package:project/shared_widgets/password_field.dart';
@@ -21,27 +20,32 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  // --- LOCAL STATE for UI ---
-  // هذه الحالة تخص الواجهة فقط
+  // ===============================
+  // LOCAL UI STATE
+  // ===============================
   bool _isTenant = true;
   File? _personalImage;
   File? _idImage;
 
-  // --- DEPENDENCIES ---
+  // ===============================
+  // DEPENDENCIES
+  // ===============================
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _dobController = TextEditingController();
   final AuthController controller = Get.find<AuthController>();
 
+  // ===============================
+  // LIFECYCLE
+  // ===============================
   @override
   void dispose() {
     _dobController.dispose();
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
-
+  // ===============================
+  // HELPERS
+  // ===============================
   Future<void> _pickImage(ValueChanged<File?> onPicked) async {
     final XFile? picked = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -62,64 +66,33 @@ class _SignUpPageState extends State<SignUpPage> {
     if (picked != null) {
       final formatted =
           "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-      // تحديث كلا المراقبين
       _dobController.text = formatted;
       controller.dobController.text = formatted;
     }
   }
 
-  /// ✅ دالة جديدة لمعالجة عملية التسجيل
+  /// ===============================
+  /// SIGN UP FLOW
+  /// ===============================
   Future<void> _handleSignUp() async {
-    // التحقق من وجود الصور
-    if (_personalImage == null || _idImage == null) {
-      Get.snackbar(
-        'Incomplete Form',
-        'Please upload both a personal photo and an ID photo.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    // 1. أرسل الـ OTP أولاً
-    try {
-      await controller.sendOtp(controller.phoneController.text.trim());
-
-      // 2. إذا نجح، اجمع البيانات وانتقل لشاشة الـ OTP
-      final registrationData = {
-        'isTenant': _isTenant,
-        'personalImage': _personalImage,
-        'idImage': _idImage,
-      };
-
-      // استخدم Get.to بدلاً من Get.toNamed لتمرير البيانات المعقدة
-      Get.to(
-        () => OtpVerificationPage(
-          phoneNumber: controller.phoneController.text.trim(),
-          registrationData: registrationData,
-        ),
-        // يمكنك إضافة تأثيرات انتقال هنا
-        transition: Transition.rightToLeft,
-      );
-    } catch (e) {
-      // AuthController سيعرض رسالة الخطأ تلقائيًا عبر Obx
-      // لا تحتاج لفعل أي شيء إضافي هنا
-    }
+    await controller.register(
+      isTenant: _isTenant,
+      personalImage: _personalImage,
+      idImage: _idImage,
+    );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===============================
   // UI
-  // ---------------------------------------------------------------------------
-
+  // ===============================
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          // استخدام Obx لمراقبة isLoading و errorMessage
           child: Obx(
             () => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -136,8 +109,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   style: theme.textTheme.titleLarge,
                 ),
                 const SizedBox(height: 20),
-
-                // Role Toggle
+                // Role
                 RoleToggle(
                   optionOneText: 'Tenant',
                   optionTwoText: 'Owner',
@@ -145,8 +117,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   onChanged: (v) => setState(() => _isTenant = v),
                 ),
                 const SizedBox(height: 20),
-
-                // --- Text Fields ---
                 CustomTextField(
                   hint: 'first_name'.tr,
                   icon: Icons.person_outline,
@@ -169,7 +139,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 CustomTextField(
                   hint: 'date_of_birth'.tr,
                   icon: Icons.calendar_today_outlined,
-                  controller: _dobController, // استخدم المراقب المحلي للعرض
+                  controller: _dobController,
                   readOnly: true,
                   onTap: () => _pickDateOfBirth(context),
                 ),
@@ -184,8 +154,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: controller.confirmPasswordController,
                 ),
                 const SizedBox(height: 20),
-
-                // --- Image Pickers ---
                 Row(
                   children: [
                     ImagePickerBox(
@@ -203,8 +171,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                   ],
                 ),
-
-                // --- Error Display ---
                 if (controller.errorMessage.value.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -214,17 +180,17 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ],
                 const SizedBox(height: 24),
-
-                // --- Action Button ---
+                
+                // --- MERGED PART ---
                 PrimaryButton(
                   text: controller.isLoading.value
-                      ? '...'
-                      : 'sign_up'.tr,
+                      ? 'Processing...'.tr // Use clearer loading text, still translatable
+                      : 'sign_up'.tr, // Keep using translation
                   onPressed: controller.isLoading.value ? null : _handleSignUp,
                 ),
-                const SizedBox(height: 16),
+                // --- END OF MERGED PART ---
 
-                // --- Navigation to Sign In ---
+                const SizedBox(height: 16),
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
@@ -238,7 +204,8 @@ class _SignUpPageState extends State<SignUpPage> {
                           color: theme.primaryColor,
                         ),
                         recognizer: TapGestureRecognizer()
-                          ..onTap = () => Get.offAllNamed(AppRouter.signIn),
+                          ..onTap =
+                              () => Get.offAllNamed(AppRouter.signIn),
                       ),
                     ],
                   ),

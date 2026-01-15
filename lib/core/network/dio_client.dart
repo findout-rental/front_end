@@ -39,10 +39,8 @@ class DioClient {
           }
           handler.next(options);
         },
-
         onError: (DioException e, handler) {
           final responseData = e.response?.data;
-
           final String message =
               (responseData is Map && responseData['message'] != null)
               ? responseData['message'].toString()
@@ -89,7 +87,6 @@ class DioClient {
   Dio get dio => _dio;
 
   // ================= REQUEST METHODS =================
-
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
     return _dio.get(path, queryParameters: queryParameters);
   }

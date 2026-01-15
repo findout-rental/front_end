@@ -1,10 +1,13 @@
-// lib/data/models/booking_model.dart
-
 import 'package:flutter/material.dart';
 import 'package:project/data/models/apartment_model.dart';
 
 /// يمثل الحالات المختلفة للحجز
-enum BookingStatus { active, completed, cancelled, unknown }
+enum BookingStatus {
+  active,
+  completed,
+  cancelled,
+  unknown,
+}
 
 class BookingModel {
   final String bookingId;
@@ -21,40 +24,44 @@ class BookingModel {
     this.status = BookingStatus.active,
   });
 
-  /// ✅ دالة Factory لتحويل JSON القادم من الخادم إلى كائن BookingModel
+  // ===============================
+  // FACTORIES
+  // ===============================
+
+  /// تحويل JSON القادم من الخادم إلى BookingModel
   factory BookingModel.fromJson(Map<String, dynamic> json) {
-    // دالة مساعدة لتحويل نص الحالة إلى enum
-    BookingStatus parseStatus(String? statusString) {
-      switch (statusString) {
-        case 'active':
-          return BookingStatus.active;
-        case 'completed':
-          return BookingStatus.completed;
-        case 'cancelled':
-          return BookingStatus.cancelled;
-        default:
-          return BookingStatus.unknown;
-      }
+  BookingStatus parseStatus(String? status) {
+    switch (status) {
+      case 'pending':
+      case 'approved':
+        return BookingStatus.active;
+      case 'completed':
+        return BookingStatus.completed;
+      case 'cancelled':
+      case 'rejected':
+        return BookingStatus.cancelled;
+      default:
+        return BookingStatus.unknown;
     }
-
-    // ⚠️ تأكد من أن أسماء الحقول ('id', 'status', 'apartment', etc.)
-    // تتطابق تمامًا مع ما يرسله خادم لارافيل.
-    return BookingModel(
-      // استخدام .toString() للتعامل مع id سواء كان int أو String
-      bookingId: json['id']?.toString() ?? '',
-
-      // استخدام Apartment.fromJson لتحويل كائن الشقة المتداخل
-      apartment: Apartment.fromJson(json['apartment'] ?? {}),
-
-      // بناء DateTimeRange من start_date و end_date
-      dateRange: DateTimeRange(
-        start: DateTime.tryParse(json['start_date'] ?? '') ?? DateTime.now(),
-        end: DateTime.tryParse(json['end_date'] ?? '') ?? DateTime.now(),
-      ),
-
-      totalPrice: json['total_price'] ?? 0,
-
-      status: parseStatus(json['status']),
-    );
   }
+
+  return BookingModel(
+    bookingId: json['id']?.toString() ?? '',
+    apartment: Apartment.fromJson(json['apartment'] ?? {}),
+    dateRange: DateTimeRange(
+      start: DateTime.tryParse(json['check_in_date'] ?? '') ?? DateTime.now(),
+      end: DateTime.tryParse(json['check_out_date'] ?? '') ?? DateTime.now(),
+    ),
+    totalPrice: json['total_rent'] ?? 0,
+    status: parseStatus(json['status']),
+  );
+}
+
+
+  // ===============================
+  // HELPERS (اختياري لكن مفيد)
+  // ===============================
+  bool get isActive => status == BookingStatus.active;
+  bool get isCompleted => status == BookingStatus.completed;
+  bool get isCancelled => status == BookingStatus.cancelled;
 }

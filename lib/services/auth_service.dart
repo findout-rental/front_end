@@ -8,61 +8,47 @@ class AuthService {
 
   AuthService(this._dioClient);
 
+  // ---------------------------------------------------------------------------
+  // LOGIN
+  // ---------------------------------------------------------------------------
   Future<Response> login({
     required String mobileNumber,
     required String password,
   }) {
     return _dioClient.post(
       ApiEndpoints.login,
-      data: {'mobile_number': mobileNumber, 'password': password},
+      data: {
+        'mobile_number': mobileNumber,
+        'password': password,
+      },
     );
   }
 
-  Future<Response> sendOtp({required String mobileNumber}) {
+  // SEND OTP
+  Future<Response> sendOtp({
+    required String mobileNumber,
+  }) {
     return _dioClient.post(
       ApiEndpoints.sendOtp,
-      data: {'mobile_number': mobileNumber},
+      data: {
+        'mobile_number': mobileNumber,
+      },
     );
-  }
-
-  // ✅ دالة جديدة للتحقق من ال-OTP
+  }  // VERIFY OTP
   Future<Response> verifyOtp({
     required String mobileNumber,
     required String otpCode,
   }) {
     return _dioClient.post(
       ApiEndpoints.verifyOtp,
-      data: {'mobile_number': mobileNumber, 'otp_code': otpCode},
+      data: {
+        'mobile_number': mobileNumber,
+        'otp_code': otpCode,
+      },
     );
   }
 
-  // ✅ دالة جديدة لتحديث الملف الشخصي
-  Future<Response> updateProfile({
-    required String firstName,
-    required String lastName,
-    File? profileImage, // الصورة اختيارية
-  }) async {
-    final Map<String, dynamic> data = {
-      'first_name': firstName,
-      'last_name': lastName,
-      // ⚠️ ملاحظة: لارافيل تتوقع PUT، ولكن FormData لا تعمل جيدًا مع PUT
-      // لذا سنستخدم POST مع _method spoofing، وهو نمط شائع في لارافيل
-      '_method': 'PUT',
-    };
-
-    if (profileImage != null) {
-      data['personal_photo'] = await MultipartFile.fromFile(
-        profileImage.path,
-        filename: profileImage.path.split('/').last,
-      );
-    }
-
-    final formData = FormData.fromMap(data);
-
-    // ✅ نستخدم POST إلى /profile، ولارافيل ستفهمها كـ PUT
-    return _dioClient.post(ApiEndpoints.profile, data: formData);
-  }
-
+  // REGISTER (بعد OTP)
   Future<Response> register({
     required String firstName,
     required String lastName,
@@ -72,16 +58,19 @@ class AuthService {
     required String role,
     required File personalPhoto,
     required File idPhoto,
+    required String otpCode,
   }) async {
     final formData = FormData.fromMap({
       'first_name': firstName,
       'last_name': lastName,
       'mobile_number': mobileNumber,
       'password': password,
-      'password_confirmation': password, // ✅ مهم
+      'password_confirmation': password,
       'date_of_birth': dateOfBirth,
       'role': role,
-      // 'otp_code': '123456', // ✅ 6 digits
+      'otp_code': otpCode,
+
+      // الصور
       'personal_photo': await MultipartFile.fromFile(
         personalPhoto.path,
         filename: personalPhoto.path.split('/').last,
@@ -92,18 +81,24 @@ class AuthService {
       ),
     });
 
-    return _dioClient.post(ApiEndpoints.register, data: formData);
+    return _dioClient.post(
+      ApiEndpoints.register,
+      data: formData,
+    );
   }
 
-  /// ✅ يرسل طلبًا لإعادة تعيين كلمة المرور (يرسل OTP)
-  Future<Response> forgotPassword({required String mobileNumber}) {
+  // ---------------------------------------------------------------------------
+  // FORGOT / RESET PASSWORD
+  // ---------------------------------------------------------------------------
+  Future<Response> forgotPassword({
+    required String mobileNumber,
+  }) {
     return _dioClient.post(
       ApiEndpoints.forgotPassword,
       data: {'mobile_number': mobileNumber},
     );
   }
 
-  /// ✅ يعيد تعيين كلمة المرور باستخدام الرمز والكلمة الجديدة
   Future<Response> resetPassword({
     required String mobileNumber,
     required String otpCode,
@@ -118,6 +113,33 @@ class AuthService {
         'password': newPassword,
         'password_confirmation': confirmPassword,
       },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // UPDATE PROFILE
+  // ---------------------------------------------------------------------------
+  Future<Response> updateProfile({
+    required String firstName,
+    required String lastName,
+    File? profileImage,
+  }) async {
+    final Map<String, dynamic> data = {
+      'first_name': firstName,
+      'last_name': lastName,
+      '_method': 'PUT', // Laravel method spoofing
+    };
+
+    if (profileImage != null) {
+      data['personal_photo'] = await MultipartFile.fromFile(
+        profileImage.path,
+        filename: profileImage.path.split('/').last,
+      );
+    }
+
+    return _dioClient.post(
+      ApiEndpoints.profile,
+      data: FormData.fromMap(data),
     );
   }
 }

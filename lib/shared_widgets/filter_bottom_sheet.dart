@@ -245,8 +245,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 items: _cities
                     .map(
                       (city) =>
-                          DropdownMenuItem(value: city, child: Text(city)),
-                    )
+                      DropdownMenuItem(value: city, child: Text(city)),
+                )
                     .toList(),
                 onChanged: (value) => setState(() => _selectedCity = value),
                 decoration: const InputDecoration(labelText: 'المدينة'),
@@ -290,11 +290,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   Widget _rangeInfo(
-    RangeValues? values, {
-    required double defaultMin,
-    required double defaultMax,
-    required String unit,
-  }) {
+      RangeValues? values, {
+        required double defaultMin,
+        required double defaultMax,
+        required String unit,
+      }) {
     final start = (values?.start ?? defaultMin).round();
     final end = (values?.end ?? defaultMax).round();
     return Padding(

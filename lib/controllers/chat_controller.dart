@@ -2,7 +2,6 @@
 /*
 import 'dart:convert';
 import 'package:get/get.dart';
-import 'package:pusher_client/pusher_client.dart';
 import 'package:project/data/models/chat_model.dart';
 import 'package:project/data/models/message_model.dart';
 import 'package:project/services/chat_service.dart';
@@ -67,9 +66,10 @@ class ChatController extends GetxController {
       final List<dynamic> data = response.data['data'] ?? [];
 
       final fetchedMessages = data.map((json) {
-        final msg = Message.fromJson(json);
-        msg.isMe = msg.senderId == myUserId;
-        return msg;
+        return Message.fromJson(
+          json,
+          currentUserId: myUserId,
+        );
       }).toList();
 
       messages.assignAll(fetchedMessages.reversed);
@@ -111,7 +111,6 @@ class ChatController extends GetxController {
 
   // --- WEBSOCKET LOGIC ---
   void _listenToChannel(String otherUserId) {
-    // ✅ التحقق من وجود المستخدم
     final myUserId = _authController.currentUser.value?.uid;
     if (myUserId == null) return;
 
@@ -121,28 +120,30 @@ class ChatController extends GetxController {
     if (_currentChannelName == channelName) return;
     _currentChannelName = channelName;
 
-    _websocketService.listen(channelName, 'App\\Events\\NewMessageSent', (
-      PusherEvent? event,
-    ) {
-      print("Pusher Event Received: ${event?.data}");
-      if (event?.data != null) {
+    _websocketService.listen(
+      channelName,
+      'new-message',
+          (String rawData) {
         try {
-          final decodedData = jsonDecode(event!.data!);
+          final decodedData = jsonDecode(rawData);
           final Map<String, dynamic> messageData = decodedData['message'];
-          final message = Message.fromJson(messageData);
 
-          // ✅ التحقق من المستخدم مرة أخرى داخل الـ callback
-          final currentUserId = _authController.currentUser.value?.uid;
-          if (currentUserId != null && message.senderId != currentUserId) {
-            if (!messages.any((m) => m.id == message.id)) {
-              messages.insert(0, message);
-            }
+          final message = Message.fromJson(
+            messageData,
+            currentUserId: myUserId,
+          );
+
+          if (!messages.any((m) => m.id == message.id)) {
+            messages.insert(0, message);
           }
         } catch (e) {
-          print("Error parsing Pusher event: $e");
+          print("❌ WebSocket parse error: $e");
         }
-      }
-    });
+      },
+    );
   }
+
+
+
 }
 */

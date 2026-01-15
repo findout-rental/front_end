@@ -1,67 +1,95 @@
-// // lib/features/chat/screens/chat_detail_screen.dart
-
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 // import 'package:project/controllers/chat_controller.dart';
 // import 'package:project/data/models/chat_model.dart';
 // import 'package:project/data/models/message_model.dart';
 
-
 // class ChatDetailScreen extends StatefulWidget {
-//   final Chat chat; // استقبل كائن المحادثة
+//   final Chat chat;
 //   const ChatDetailScreen({Key? key, required this.chat}) : super(key: key);
+
 //   @override
 //   State<ChatDetailScreen> createState() => _ChatDetailScreenState();
 // }
 
 // class _ChatDetailScreenState extends State<ChatDetailScreen> {
 //   final TextEditingController _textController = TextEditingController();
-//   // ✅ الوصول إلى المراقب
 //   final ChatController controller = Get.find<ChatController>();
 
 //   @override
 //   void initState() {
 //     super.initState();
-//     // ✅ جلب الرسائل عند بدء الشاشة
-//     controller.fetchMessages(widget.chat.userId); // افترض وجود userId في Chat model
+//     // جلب الرسائل عند فتح الشاشة
+//     controller.fetchMessages(widget.chat.userId);
+//   }
+
+//   @override
+//   void dispose() {
+//     _textController.dispose();
+//     super.dispose();
 //   }
 
 //   void _sendMessage() {
-//     // ✅ استدعاء دالة الإرسال في المراقب
-//     controller.sendMessage(_textController.text, widget.chat.userId);
+//     final text = _textController.text.trim();
+//     if (text.isEmpty) return;
+//     controller.sendMessage(text, widget.chat.userId);
 //     _textController.clear();
 //   }
 
 //   @override
 //   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
 //     return Scaffold(
-//       appBar: AppBar(title: Text(widget.chat.name)),
+//       appBar: AppBar(
+//         title: Row(
+//           children: [
+//             CircleAvatar(
+//               radius: 20,
+//               backgroundImage: NetworkImage(widget.chat.imageUrl),
+//             ),
+//             const SizedBox(width: 12),
+//             Text(widget.chat.name),
+//           ],
+//         ),
+//         actions: [
+//           IconButton(icon: const Icon(Icons.call_outlined), onPressed: () {}),
+//           IconButton(
+//             icon: const Icon(Icons.videocam_outlined),
+//             onPressed: () {},
+//           ),
+//         ],
+//       ),
 //       body: Column(
 //         children: [
 //           Expanded(
-//             child: Obx(() { // ✅ استخدام Obx
+//             child: Obx(() {
 //               if (controller.isLoadingMessages.value) {
 //                 return const Center(child: CircularProgressIndicator());
 //               }
+//               if (controller.messages.isEmpty) {
+//                 return const Center(child: Text('لا توجد رسائل بعد'));
+//               }
 //               return ListView.builder(
 //                 reverse: true,
+//                 padding: const EdgeInsets.all(12),
 //                 itemCount: controller.messages.length,
 //                 itemBuilder: (context, index) {
-//                   final message = controller.messages[index];
+//                   final Message message = controller.messages[index];
 //                   return _MessageBubble(message: message);
 //                 },
 //               );
 //             }),
 //           ),
-//           _TextInputArea(
-//             textController: _textController,
-//             onSend: _sendMessage,
-//           ),
+//           _TextInputArea(textController: _textController, onSend: _sendMessage),
 //         ],
 //       ),
 //     );
 //   }
 // }
+
+// // ============================================================================
+// // Message Bubble
+// // ============================================================================
 // class _MessageBubble extends StatelessWidget {
 //   final Message message;
 
@@ -71,7 +99,6 @@
 //   Widget build(BuildContext context) {
 //     final theme = Theme.of(context);
 //     final bool isMe = message.isMe;
-
 //     return Row(
 //       mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
 //       children: [
@@ -102,10 +129,12 @@
 //   }
 // }
 
+// // ============================================================================
+// // Text Input Area
+// // ============================================================================
 // class _TextInputArea extends StatelessWidget {
 //   final TextEditingController textController;
 //   final VoidCallback onSend;
-
 //   const _TextInputArea({required this.textController, required this.onSend});
 
 //   @override
@@ -128,8 +157,7 @@
 //                   borderRadius: BorderRadius.circular(24),
 //                   borderSide: BorderSide.none,
 //                 ),
-//                 contentPadding:
-//                     const EdgeInsets.symmetric(horizontal: 16),
+//                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
 //               ),
 //               onSubmitted: (_) => onSend(),
 //             ),

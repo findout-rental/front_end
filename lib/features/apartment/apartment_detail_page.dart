@@ -81,11 +81,14 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
                 fit: BoxFit.cover,
                 color: Colors.black38,
                 colorBlendMode: BlendMode.darken,
-                loadingBuilder: (_, child, progress) => progress == null
+                loadingBuilder: (_, child, progress) =>
+                progress == null
                     ? child
                     : const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                ),
                 errorBuilder: (_, __, ___) => const Icon(
                   Icons.broken_image,
                   size: 50,
@@ -114,7 +117,8 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
               height: 8,
               width: _currentImageIndex == i ? 24 : 8,
               decoration: BoxDecoration(
-                color: _currentImageIndex == i ? Colors.white : Colors.white54,
+                color:
+                _currentImageIndex == i ? Colors.white : Colors.white54,
                 borderRadius: BorderRadius.circular(12),
               ),
             );
@@ -186,7 +190,8 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
               size: 18,
             ),
             const SizedBox(width: 4),
-            Text(widget.apartment.location, style: theme.textTheme.bodySmall),
+            Text(widget.apartment.location,
+                style: theme.textTheme.bodySmall),
           ],
         ),
       ],
@@ -232,12 +237,9 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
             onChanged: (rating) => setState(() => _userRating = rating),
             displayRatingValue: true,
             interactiveTooltips: true,
-
-            // ✅ REQUIRED PARAMETERS
             customFilledIcon: Icons.star,
             customHalfFilledIcon: Icons.star_half,
             customEmptyIcon: Icons.star_border,
-
             starSize: 40,
             animationDuration: const Duration(milliseconds: 500),
             animationCurve: Curves.easeInOut,
@@ -251,6 +253,7 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
     final theme = Theme.of(context);
     const ownerName = 'شركة العقار الذهبي';
     const ownerImage = 'https://i.pravatar.cc/150?img=12';
+    const ownerId = 'owner_1'; // ✅ مهم للتوافق مع ChatModel
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,11 +287,12 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
                   context,
                   AppRouter.chatDetail,
                   arguments: Chat(
+                    userId: ownerId,
                     name: ownerName,
                     imageUrl: ownerImage,
                     lastMessage: 'يمكنك بدء المحادثة الآن...',
                     time: '',
-                    unreadCount: 0, userId: '',
+                    unreadCount: 0,
                   ),
                 );
               },
@@ -328,13 +332,13 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
             Expanded(
               child: _isAvailable
                   ? PrimaryButton(
-                      text: 'احجز الآن',
-                      onPressed: _navigateToBooking,
-                    )
+                text: 'احجز الآن',
+                onPressed: _navigateToBooking,
+              )
                   : ElevatedButton(
-                      onPressed: _cancelBooking,
-                      child: const Text('إلغاء الحجز'),
-                    ),
+                onPressed: _cancelBooking,
+                child: const Text('إلغاء الحجز'),
+              ),
             ),
           ],
         ),
@@ -346,14 +350,15 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   // Helpers
   // ---------------------------------------------------------------------------
   Future<void> _navigateToBooking() async {
-    final result =
-        await Navigator.pushNamed(
-              context,
-              AppRouter.booking,
-              arguments: widget.apartment,
-            )
-            as bool?;
-    if (result == true) setState(() => _isAvailable = false);
+    final result = await Navigator.pushNamed(
+      context,
+      AppRouter.booking,
+      arguments: widget.apartment,
+    ) as bool?;
+
+    if (result == true) {
+      setState(() => _isAvailable = false);
+    }
   }
 
   void _cancelBooking() => setState(() => _isAvailable = true);
@@ -381,5 +386,6 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
     );
   }
 
-  Widget _buildSectionDivider() => const Divider(height: 48, thickness: 0.8);
+  Widget _buildSectionDivider() =>
+      const Divider(height: 48, thickness: 0.8);
 }

@@ -1,5 +1,3 @@
-// lib/controllers/auth_controller.dart
-
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -12,14 +10,21 @@ import 'package:project/features/auth/reset_password_page.dart';
 import 'package:project/services/auth_service.dart';
 
 class AuthController extends GetxController {
-  // --- DEPENDENCIES ---
-  // ✅ سيتم حقنها عبر المنشئ من InitialBinding
+  // ===============================
+  // DEPENDENCIES (Injected)
+  // ===============================
+
+  String? debugOtp;
+  String? _verifiedOtpCode;
+
   final AuthService _authService;
   final AuthStorage _authStorage;
-  // ✅ المنشئ الذي يستقبل الاعتماديات
+
   AuthController(this._authService, this._authStorage);
 
-  // --- TEXT EDITING CONTROLLERS ---
+  // ===============================
+  // TEXT CONTROLLERS
+  // ===============================
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final phoneController = TextEditingController();
@@ -27,20 +32,22 @@ class AuthController extends GetxController {
   final confirmPasswordController = TextEditingController();
   final dobController = TextEditingController();
 
-  // --- REACTIVE STATE ---
+  // ===============================
+  // STATE
+  // ===============================
   final isLoading = false.obs;
   final errorMessage = ''.obs;
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
 
-  // --- GETTERS ---
   bool get isLoggedIn => _authStorage.token != null;
 
-  // --- PUBLIC METHODS (ACTIONS) ---
-
-  /// Handles the login process.
+  // ===============================
+  // AUTH ACTIONS
+  // ===============================
   Future<void> login() async {
     isLoading.value = true;
     errorMessage.value = '';
+
     try {
       final response = await _authService.login(
         mobileNumber: phoneController.text.trim(),
@@ -63,35 +70,6 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Sends an OTP to the user's phone number.
-  Future<void> sendOtp(String phoneNumber) async {
-    isLoading.value = true;
-    errorMessage.value = '';
-    try {
-      await _authService.sendOtp(mobileNumber: phoneNumber);
-    } catch (e) {
-      _handleAuthError(e);
-      rethrow;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  /// Verifies the OTP code.
-  Future<void> verifyOtp(String phoneNumber, String otpCode) async {
-    isLoading.value = true;
-    errorMessage.value = '';
-    try {
-      await _authService.verifyOtp(mobileNumber: phoneNumber, otpCode: otpCode);
-    } catch (e) {
-      _handleAuthError(e);
-      rethrow;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  /// Handles the user registration process after OTP verification.
   Future<void> register({
     required bool isTenant,
     required File? personalImage,
@@ -101,6 +79,7 @@ class AuthController extends GetxController {
       errorMessage.value = 'Please upload all required images.';
       return;
     }
+
     if (passwordController.text != confirmPasswordController.text) {
       errorMessage.value = 'Passwords do not match.';
       return;
@@ -108,6 +87,47 @@ class AuthController extends GetxController {
 
     isLoading.value = true;
     errorMessage.value = '';
+
+    try {
+      // فقط إرسال OTP
+      await _authService.sendOtp(mobileNumber: phoneController.text.trim());
+
+      // await _authService.register(
+      //   firstName: firstNameController.text.trim(),
+      //   lastName: lastNameController.text.trim(),
+      //   mobileNumber: phoneController.text.trim(),
+      //   password: passwordController.text,
+      //   dateOfBirth: dobController.text,
+      //   role: isTenant ? 'tenant' : 'owner',
+      //   personalPhoto: personalImage,
+      //   idPhoto: idImage,
+      //   otpCode: '111111',
+      // );
+      Get.toNamed(
+        AppRouter.otp,
+        arguments: {
+          'mobile_number': phoneController.text.trim(),
+          'isTenant': isTenant,
+          'personalImage': personalImage,
+          'idImage': idImage,
+        },
+      );
+    } on ApiException catch (e) {
+      _handleAuthError(e);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> completeRegistration({
+    required bool isTenant,
+    required File personalImage,
+    required File idImage,
+    required String otpCode,
+  }) async {
+    isLoading.value = true;
+    errorMessage.value = '';
+
     try {
       await _authService.register(
         firstName: firstNameController.text.trim(),
@@ -118,35 +138,26 @@ class AuthController extends GetxController {
         role: isTenant ? 'tenant' : 'owner',
         personalPhoto: personalImage,
         idPhoto: idImage,
+        otpCode: otpCode,
       );
 
       Get.offAllNamed(
         AppRouter.pendingApproval,
-        arguments:
-            'Your account has been created successfully.\nPlease wait for admin approval.',
+        arguments: 'تم إنشاء الحساب بنجاح، بانتظار موافقة الإدارة',
       );
-    } catch (e) {
-      _handleAuthError(e);
+    } on ApiException catch (e) {
+      errorMessage.value = e.message;
+      Get.snackbar('خطأ', e.message);
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Logs out the current user.
-  void logout() {
-    _authStorage.clearToken();
-    _authStorage.clearUser();
-    currentUser.value = null;
-    Get.offAllNamed(AppRouter.signIn);
-  }
-
-  /// ✅ دالة جديدة لتدفق نسيت كلمة المرور
   Future<void> forgotPassword(String mobileNumber) async {
     isLoading.value = true;
     errorMessage.value = '';
     try {
       await _authService.forgotPassword(mobileNumber: mobileNumber);
-      // بعد النجاح، انتقل إلى شاشة إدخال الرمز
       Get.to(() => const ResetPasswordPage(), arguments: mobileNumber);
     } catch (e) {
       _handleAuthError(e);
@@ -156,7 +167,6 @@ class AuthController extends GetxController {
     }
   }
 
-  /// ✅ دالة جديدة لإعادة تعيين كلمة المرور
   Future<void> resetPassword({
     required String mobileNumber,
     required String otpCode,
@@ -172,7 +182,7 @@ class AuthController extends GetxController {
         newPassword: newPassword,
         confirmPassword: confirmPassword,
       );
-      // بعد النجاح، انتقل إلى صفحة تسجيل الدخول مع رسالة نجاح
+
       Get.offAllNamed(AppRouter.signIn);
       Get.snackbar(
         'Success',
@@ -185,7 +195,9 @@ class AuthController extends GetxController {
     }
   }
 
-  // ✅ دالة جديدة لتحديث ملف المستخدم
+  // ===============================
+  // PROFILE
+  // ===============================
   Future<void> updateUserProfile({
     required String firstName,
     required String lastName,
@@ -200,13 +212,11 @@ class AuthController extends GetxController {
         profileImage: profileImage,
       );
 
-      // بعد النجاح، قم بتحديث بيانات المستخدم في الحالة والتخزين
-      final userJson =
-          response.data['data']; // ⚠️ افترض أن لارافيل تعيد المستخدم المحدث
+      final userJson = response.data['data'];
       _authStorage.saveUser(userJson);
       currentUser.value = UserModel.fromJson(userJson);
 
-      Get.back(); // العودة من صفحة التعديل
+      Get.back();
       Get.snackbar('Success', 'Profile updated successfully!');
     } catch (e) {
       _handleAuthError(e);
@@ -215,7 +225,13 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Checks authentication status on app startup.
+  void logout() {
+    _authStorage.clearToken();
+    _authStorage.clearUser();
+    currentUser.value = null;
+    Get.offAllNamed(AppRouter.signIn);
+  }
+
   void checkAuthStatus() {
     final token = _authStorage.token;
     if (token != null) {
@@ -226,14 +242,15 @@ class AuthController extends GetxController {
     }
   }
 
-  // --- PRIVATE METHODS ---
+  // ===============================
+  // HELPERS
+  // ===============================
   void _handleAuthError(Object e) {
-    print('AUTH ERROR TYPE => ${e.runtimeType}');
-    print('AUTH ERROR => $e');
+    debugPrint('AUTH ERROR TYPE => ${e.runtimeType}');
+    debugPrint('AUTH ERROR => $e');
 
     if (e is DioException && e.error is ApiException) {
-      final apiError = e.error as ApiException;
-      errorMessage.value = apiError.message;
+      errorMessage.value = (e.error as ApiException).message;
     } else if (e is ApiException) {
       errorMessage.value = e.message;
     } else {
@@ -241,17 +258,17 @@ class AuthController extends GetxController {
     }
   }
 
-  // --- LIFECYCLE ---
+  // ===============================
+  // LIFECYCLE
+  // ===============================
   @override
   void onInit() {
     super.onInit();
-    // ✅ استدعاء checkAuthStatus لملء بيانات المستخدم فورًا عند بدء التطبيق
     checkAuthStatus();
   }
 
   @override
   void onClose() {
-    // تنظيف وحدات التحكم عند إغلاق المراقب
     firstNameController.dispose();
     lastNameController.dispose();
     phoneController.dispose();

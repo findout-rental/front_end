@@ -36,22 +36,53 @@ class Apartment {
   });
 
   factory Apartment.fromJson(Map<String, dynamic> json) {
-    return Apartment(
-      id: json['id'].toString(),
-      imageUrl: json['image_url'] ?? '',
-      title: json['title'] ?? '',
-      location: json['location'] ?? '',
-      price: json['price'].toString(),
-      isFavorited: json['is_favorited'] ?? false,
-      images: List<String>.from(json['images'] ?? []),
-      isAvailable: json['is_available'] ?? true,
-      rating: (json['rating'] != null)
-          ? double.parse(json['rating'].toString())
-          : 4.5,
-      reviewCount: json['review_count'] ?? 0,
-      pricePerNight: json['price_per_night'] ?? 0,
-    );
-  }
+  final String city = json['city'] ?? '';
+  final String governorate = json['governorate'] ?? '';
+  final String address = json['address'] ?? '';
+
+  final List imagesList = json['images'] ?? [];
+
+  return Apartment(
+    id: json['id']?.toString() ?? '',
+
+    // ✅ أول صورة أو placeholder
+    imageUrl: imagesList.isNotEmpty
+        ? imagesList.first.toString()
+        : '',
+
+    // ✅ عنوان منطقي
+    title: json['title'] ??
+        'Apartment in $city',
+
+    // ✅ دمج الموقع بدل location الوهمي
+    location: [
+      address,
+      city,
+      governorate,
+    ].where((e) => e.isNotEmpty).join(', '),
+
+    // ✅ السعر للـ UI (string)
+    price: json['price_per_night'] != null
+        ? '${json['price_per_night']}'
+        : '0',
+
+    isFavorited: json['is_favorited'] ?? false,
+
+    images: imagesList.map((e) => e.toString()).toList(),
+
+    isAvailable: json['is_available'] ?? true,
+
+    rating: json['rating'] != null
+        ? double.tryParse(json['rating'].toString()) ?? 4.5
+        : 4.5,
+
+    reviewCount: json['review_count'] ?? 0,
+
+    // ✅ business logic
+    pricePerNight: json['price_per_night'] ?? 0,
+  );
+}
+
 
   Map<String, dynamic> toJson() => {
     'id': id,

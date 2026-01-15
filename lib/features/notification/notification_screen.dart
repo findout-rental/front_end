@@ -1,5 +1,3 @@
-// lib/features/notification/notifications_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/controllers/notification_controller.dart';
@@ -11,29 +9,41 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ حقن المراقب. سيتم إنشاؤه مرة واحدة عند فتح الصفحة.
-    final NotificationController controller = Get.put(NotificationController());
+    // ✅ إنشاء المراقب مرة واحدة عند فتح الصفحة
+    final NotificationController controller =
+    Get.put(NotificationController());
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('الإشعارات'),
         actions: [
-          // ✅ زر لوضع علامة "مقروء" على الكل
-          TextButton(
-            onPressed: controller.markAllAsRead,
-            child: const Text('Mark all as read'),
+          // زر تعليم الكل كمقروء
+          Obx(
+                () => controller.notifications.isEmpty
+                ? const SizedBox.shrink()
+                : TextButton(
+              onPressed: controller.markAllAsRead,
+              child: const Text('Mark all as read'),
+            ),
           ),
         ],
       ),
       body: Obx(() {
-        // ✅ استخدام Obx لمراقبة الحالة
-        if (controller.isLoading.value && controller.notifications.isEmpty) {
+        // حالة التحميل الأولى
+        if (controller.isLoading.value &&
+            controller.notifications.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
-        // استخدام controller.notifications بدلاً من المتغير المحلي
-        return controller.notifications.isEmpty
-            ? const EmptyNotificationsView()
-            : NotificationsListView(notifications: controller.notifications);
+
+        // لا يوجد إشعارات
+        if (controller.notifications.isEmpty) {
+          return const EmptyNotificationsView();
+        }
+
+        // عرض الإشعارات
+        return NotificationsListView(
+          notifications: controller.notifications,
+        );
       }),
     );
   }

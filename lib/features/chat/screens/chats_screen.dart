@@ -1,5 +1,3 @@
-// // lib/features/chat/screens/chats_screen.dart
-
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 // import 'package:project/controllers/chat_controller.dart';
@@ -10,24 +8,29 @@
 
 //   @override
 //   Widget build(BuildContext context) {
-//     // ✅ حقن المراقب
-// final ChatController controller = Get.put(
-//   ChatController(
-//     Get.find(), // dependency 1
-//     Get.find(), // dependency 2
-//     Get.find(), // dependency 3
-//   ),
-// );
+//     // ✅ جلب المراقب الصحيح (بدون إنشاء جديد)
+//     final ChatController controller = Get.find<ChatController>();
 
 //     return Scaffold(
-//       appBar: AppBar(title: const Text("My Chats")),
+//       appBar: AppBar(
+//         title: const Text("My Chats"),
+//         actions: [
+//           IconButton(
+//             icon: const Icon(Icons.search),
+//             onPressed: () {
+//               // TODO: search chats
+//             },
+//           ),
+//         ],
+//       ),
 //       body: Obx(() {
-//         // ✅ استخدام Obx
 //         if (controller.isLoadingConversations.value) {
 //           return const Center(child: CircularProgressIndicator());
 //         }
 //         if (controller.conversations.isEmpty) {
-//           return const Center(child: Text("No conversations yet."));
+//           return const Center(
+//             child: Text("No conversations yet."),
+//           );
 //         }
 //         return ListView.builder(
 //           itemCount: controller.conversations.length,
@@ -37,6 +40,12 @@
 //           },
 //         );
 //       }),
+//       floatingActionButton: FloatingActionButton(
+//         onPressed: () {
+//           // TODO: start new chat
+//         },
+//         child: const Icon(Icons.chat_bubble_outline),
+//       ),
 //     );
 //   }
 // }

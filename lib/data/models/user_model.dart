@@ -1,21 +1,23 @@
-// lib/data/models/user_model.dart
-
 import 'dart:io';
 
+/// أدوار المستخدم داخل التطبيق
 enum UserRole {
   tenant,
   owner,
   unknown,
-} // ✅ إضافة حالة "غير معروف" كقيمة افتراضية آمنة
+}
 
 class UserModel {
   final String uid;
   final String fullName;
   final String phone;
   final UserRole role;
-  final DateTime? dateOfBirth; // ✅ جعله String ليتوافق مع ما يرسله Flutter
+  final DateTime? dateOfBirth;
   final String? profileImageUrl;
-  final File? profileImageFile; // هذا للاستخدام المحلي فقط
+
+  /// صورة محلية (للاستخدام المؤقت فقط – لا تُخزَّن في السيرفر)
+  final File? profileImageFile;
+
   final DateTime createdAt;
 
   const UserModel({
@@ -29,48 +31,50 @@ class UserModel {
     this.profileImageFile,
   });
 
-  /// ✅ دالة Factory لتحويل JSON القادم من الخادم إلى كائن UserModel
+  // ===============================
+  // FACTORIES
+  // ===============================
+
+  /// تحويل JSON القادم من الخادم إلى UserModel
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    // دالة مساعدة لتحويل نص الدور إلى enum
     UserRole parseRole(String? roleString) {
-      if (roleString == 'owner') return UserRole.owner;
-      if (roleString == 'tenant') return UserRole.tenant;
-      return UserRole.unknown;
+      switch (roleString) {
+        case 'owner':
+          return UserRole.owner;
+        case 'tenant':
+          return UserRole.tenant;
+        default:
+          return UserRole.unknown;
+      }
     }
 
-    // دالة مساعدة لدمج الاسم الأول والأخير
-    String parseFullName(String? first, String? last) {
+    String parseFullName(String? first, String? last, String? full) {
+      if (full != null && full.isNotEmpty) return full;
       final f = first ?? '';
       final l = last ?? '';
       return '$f $l'.trim();
     }
 
     return UserModel(
-      // استخدام .toString() للتعامل مع id سواء كان int أو String
       uid: json['id']?.toString() ?? json['uid']?.toString() ?? '',
-
-      // ⚠️ تأكد من أن لارافيل تعيد 'first_name' و 'last_name' أو 'full_name'
-      fullName:
-          json['full_name'] ??
-          parseFullName(json['first_name'], json['last_name']),
-
+      fullName: parseFullName(
+        json['first_name'],
+        json['last_name'],
+        json['full_name'],
+      ),
       phone: json['mobile_number'] ?? json['phone'] ?? '',
-
       role: parseRole(json['role']),
-
-      // ⚠️ تأكد من أن لارافيل تعيد 'profile_image_url'
       profileImageUrl: json['profile_image_url'],
-
-      dateOfBirth: json['date_of_birth'],
-
-      // تحويل تاريخ الإنشاء من نص إلى DateTime
+      dateOfBirth: json['date_of_birth'] != null
+          ? DateTime.tryParse(json['date_of_birth'])
+          : null,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
           : DateTime.now(),
     );
   }
 
-  /// دالة لإنشاء مستخدم وهمي للاختبار والعرض الأولي
+  /// مستخدم وهمي (للتجربة والـ UI)
   factory UserModel.dummy() {
     return UserModel(
       uid: 'dummy-uid-12345',
@@ -81,4 +85,24 @@ class UserModel {
       profileImageUrl: 'https://i.pravatar.cc/150?img=53',
     );
   }
+
+  // ===============================
+  // SERIALIZATION (للتحديثات)
+  // ===============================
+  Map<String, dynamic> toJson() {
+    return {
+      'id': uid,
+      'full_name': fullName,
+      'mobile_number': phone,
+      'role': role.name,
+      'date_of_birth': dateOfBirth?.toIso8601String(),
+      'profile_image_url': profileImageUrl,
+    };
+  }
+
+  // ===============================
+  // HELPERS (UI-friendly)
+  // ===============================
+  bool get isTenant => role == UserRole.tenant;
+  bool get isOwner => role == UserRole.owner;
 }

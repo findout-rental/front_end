@@ -1,69 +1,125 @@
-// lib/controllers/booking_controller.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/booking_model.dart';
 import 'package:project/services/booking_service.dart';
+import 'package:project/data/providers/mock_data_provider.dart';
 
 class BookingController extends GetxController {
-  // --- DEPENDENCY ---
+  // ===============================
+  // DEPENDENCY
+  // ===============================
   final BookingService _bookingService;
 
-  // ✅ المنشئ الذي يستقبل الاعتمادية
   BookingController(this._bookingService);
 
-  // --- REACTIVE STATE ---
+  // ===============================
+  // CONFIG
+  // ===============================
+  /// فعّل هذا المتغير أثناء التطوير فقط
+  final bool useMockData = false;
+
+  // ===============================
+  // STATE
+  // ===============================
   final isLoading = false.obs;
   final errorMessage = ''.obs;
 
-  /// القائمة الرئيسية التفاعلية التي تحتوي على جميع حجوزات المستخدم
   final RxList<BookingModel> bookings = <BookingModel>[].obs;
 
-  // --- GETTERS ---
-  /// خاصية محسوبة لفلترة الحجوزات النشطة
+  // ===============================
+  // GETTERS
+  // ===============================
   List<BookingModel> get activeBookings =>
       bookings.where((b) => b.status == BookingStatus.active).toList();
 
-  /// خاصية محسوبة لفلترة الحجوزات المكتملة
   List<BookingModel> get completedBookings =>
       bookings.where((b) => b.status == BookingStatus.completed).toList();
 
-  /// خاصية محسوبة لفلترة الحجوزات الملغاة
   List<BookingModel> get cancelledBookings =>
       bookings.where((b) => b.status == BookingStatus.cancelled).toList();
 
-  // --- LIFECYCLE ---
+  // ===============================
+  // LIFECYCLE
+  // ===============================
   @override
   void onInit() {
     super.onInit();
-    fetchMyBookings();
+    useMockData ? _loadMockBookings() : fetchMyBookings();
   }
 
-  // --- PUBLIC METHODS (ACTIONS) ---
+  // ===============================
+  // DATA SOURCES
+  // ===============================
+  void _loadMockBookings() {
+    bookings.assignAll([
+      BookingModel(
+        bookingId: 'booking-1',
+        apartment: MockDataProvider.apartments[0],
+        dateRange: DateTimeRange(
+          start: DateTime.now().subtract(const Duration(days: 2)),
+          end: DateTime.now().add(const Duration(days: 5)),
+        ),
+        totalPrice: 2850,
+        status: BookingStatus.active,
+      ),
+      BookingModel(
+        bookingId: 'booking-2',
+        apartment: MockDataProvider.apartments[3],
+        dateRange: DateTimeRange(
+          start: DateTime.now().add(const Duration(days: 10)),
+          end: DateTime.now().add(const Duration(days: 15)),
+        ),
+        totalPrice: 2150,
+        status: BookingStatus.active,
+      ),
+      BookingModel(
+        bookingId: 'booking-3',
+        apartment: MockDataProvider.apartments[2],
+        dateRange: DateTimeRange(
+          start: DateTime(2023, 10, 1),
+          end: DateTime(2023, 10, 15),
+        ),
+        totalPrice: 11250,
+        status: BookingStatus.completed,
+      ),
+      BookingModel(
+        bookingId: 'booking-4',
+        apartment: MockDataProvider.apartments[1],
+        dateRange: DateTimeRange(
+          start: DateTime.now(),
+          end: DateTime.now().add(const Duration(days: 3)),
+        ),
+        totalPrice: 1250,
+        status: BookingStatus.cancelled,
+      ),
+    ]);
+  }
 
-  /// يجلب قائمة حجوزات المستخدم الحالي من الخادم.
+  // ===============================
+  // API ACTIONS
+  // ===============================
   Future<void> fetchMyBookings() async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      final response = await _bookingService.getMyBookings();
-      final List<dynamic> data = response.data['data'] ?? [];
 
-      // ⚠️ تأكد من أن BookingModel يحتوي على دالة .fromJson
-      final fetchedList = data
-          .map((json) => BookingModel.fromJson(json))
-          .toList();
-      bookings.assignAll(fetchedList);
+      final response = await _bookingService.getMyBookings();
+      final List<dynamic> data =
+    response.data['data']?['bookings'] ?? [];
+
+
+      bookings.assignAll(
+        data.map((json) => BookingModel.fromJson(json)).toList(),
+      );
     } catch (e) {
       errorMessage.value = 'Failed to load your bookings.';
-      print("Fetch Bookings Error: $e");
+      debugPrint('Fetch Bookings Error: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// ينشئ حجزًا جديدًا عبر الخادم.
   Future<void> createBooking({
     required Apartment apartment,
     required DateTimeRange dateRange,
@@ -77,7 +133,6 @@ class BookingController extends GetxController {
         dateRange: dateRange,
       );
 
-      // بعد النجاح، قم بتحديث قائمة الحجوزات من الخادم
       await fetchMyBookings();
 
       Get.snackbar(
@@ -95,27 +150,21 @@ class BookingController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
-      print("Create Booking Error: $e");
+      debugPrint('Create Booking Error: $e');
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// ✅ يلغي حجزًا باستخدام الـ ID الخاص به.
   Future<void> cancelBooking(String bookingId) async {
-    // يمكنك إضافة متغير تحميل خاص هنا إذا أردت
-    // final isCancelling = true.obs;
-
     try {
-      // استدعاء الخدمة لإلغاء الحجز في الخادم
       await _bookingService.cancelBooking(bookingId);
 
-      // تحديث الحالة محليًا لتجربة مستخدم فورية
       final index = bookings.indexWhere((b) => b.bookingId == bookingId);
       if (index != -1) {
         bookings[index].status = BookingStatus.cancelled;
-        bookings.refresh(); // أخبر GetX أن عنصرًا داخل القائمة قد تغير
+        bookings.refresh();
       }
 
       Get.snackbar(
@@ -130,9 +179,7 @@ class BookingController extends GetxController {
         errorMessage.value,
         snackPosition: SnackPosition.BOTTOM,
       );
-      print("Cancel Booking Error: $e");
-    } finally {
-      // isCancelling.value = false;
+      debugPrint('Cancel Booking Error: $e');
     }
   }
 
