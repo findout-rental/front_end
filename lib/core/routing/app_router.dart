@@ -65,11 +65,11 @@ class AppRouter {
     GetPage(name: signUp, page: () => const SignUpPage()),
     GetPage(name: pendingApproval, page: () => const PendingApprovalPage()),
     GetPage(name: home, page: () => const HomePage()),
-    GetPage(name: chats, page: () => const ChatsScreen()),
-    GetPage(
-      name: chatDetail,
-      page: () => ChatDetailScreen(chat: Get.arguments as Chat),
-    ),
+    // GetPage(name: chats, page: () => const ChatsScreen()),
+    // GetPage(
+    //   name: chatDetail,
+    //   page: () => ChatDetailScreen(chat: Get.arguments as Chat),
+    // ),
     GetPage(
       name: apartmentDetail,
       page: () => ApartmentDetailPage(apartment: Get.arguments as Apartment),
@@ -106,21 +106,21 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const PendingApprovalPage());
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
-      case chats:
-        return MaterialPageRoute(builder: (_) => const ChatsScreen());
+      // case chats:
+      //   return MaterialPageRoute(builder: (_) => const ChatsScreen());
       case notifications:
         return MaterialPageRoute(builder: (_) => NotificationsScreen());
       case addApartment:
         return MaterialPageRoute(builder: (_) => const AddApartmentPage());
 
-      case chatDetail:
-        final args = settings.arguments;
-        if (args is Chat) {
-          return MaterialPageRoute(
-            builder: (_) => ChatDetailScreen(chat: args),
-          );
-        }
-        return _errorRoute('Chat expected, got ${args.runtimeType}');
+      // case chatDetail:
+      //   final args = settings.arguments;
+      //   if (args is Chat) {
+      //     return MaterialPageRoute(
+      //       builder: (_) => ChatDetailScreen(chat: args),
+      //     );
+      //   }
+        // return _errorRoute('Chat expected, got ${args.runtimeType}');
 
       case apartmentDetail:
         final args = settings.arguments;

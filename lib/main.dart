@@ -1,18 +1,20 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart'; // ✅ استيراد جديد
 import 'package:project/bindings/initial_binding.dart';
+import 'package:project/controllers/language_controller.dart';
+import 'package:project/core/localization/app_translations.dart'; // ✅ استيراد جديد
 import 'package:project/core/routing/app_router.dart';
 import 'package:project/core/theme/app_theme.dart';
 
-Future<void> main() async {
+void main() async {
+  // ✅ تحويلها إلى async
   WidgetsFlutterBinding.ensureInitialized();
-  await configureWebSockets();
+  await GetStorage.init(); // ✅ تهيئة GetStorage
+  InitialBinding().dependencies();
   runApp(const MyApp());
-}
-
-Future<void> configureWebSockets() async {
-  // TODO: initialize your WebSocket client or service here
-  await Future.delayed(Duration.zero);
 }
 
 class MyApp extends StatelessWidget {
@@ -25,10 +27,15 @@ class MyApp extends StatelessWidget {
       title: 'Real Estate App',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // 👈 لا Obx هنا
+
+      // ✅ --- إضافات الترجمة ---
+      translations: AppTranslations(),
+      locale: LanguageController.startLocale,
+      fallbackLocale: LanguageController.fallbackLocale,
+      // -------------------------
       initialRoute: AppRouter.onboarding,
       getPages: AppRouter.routes,
-      initialBinding: InitialBinding(), // 👈 هنا التحكم
+      // لم نعد بحاجة لـ initialBinding هنا لأنه تم استدعاؤه في main
     );
   }
 }

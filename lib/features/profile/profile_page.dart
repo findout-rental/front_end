@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:project/controllers/language_controller.dart';
 import 'package:project/controllers/theme_controller.dart';
 import 'package:project/core/routing/app_router.dart';
 import 'package:project/data/models/user_model.dart';
@@ -12,6 +13,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ThemeController themeController = Get.find<ThemeController>();
+    final LanguageController langController = Get.find<LanguageController>();
     final user = UserModel.dummy();
 
     return Scaffold(
@@ -70,7 +72,23 @@ class ProfilePage extends StatelessWidget {
               }),
             ),
           ),
-
+          _buildProfileOption(
+            context: context,
+            icon: Icons.language_outlined,
+            title: 'language'.tr,
+            trailing: SizedBox(
+              width: 150,
+              child: Obx(() {
+                return RoleToggle(
+                  optionOneText: 'English',
+                  optionTwoText: 'العربية',
+                  // ✅ التعديل: value: true  -> 'English' is selected
+                  value: langController.isEnglish,
+                  onChanged: (_) => langController.toggleLanguage(),
+                );
+              }),
+            ),
+          ),
           _buildProfileOption(
             context: context,
             icon: Icons.edit_outlined,

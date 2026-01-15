@@ -1,5 +1,5 @@
 // lib/controllers/chat_controller.dart
-
+/*
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:pusher_client/pusher_client.dart';
@@ -145,3 +145,4 @@ class ChatController extends GetxController {
     });
   }
 }
+*/

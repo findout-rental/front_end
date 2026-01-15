@@ -10,7 +10,7 @@ class ApartmentController extends GetxController {
   // يتم حقن الخدمات تلقائيًا عند استدعاء Get.find()
   // final ApartmentService _apartmentService = Get.find<ApartmentService>();
   // final FavoriteService _favoriteService = Get.find<FavoriteService>();
-final ApartmentService _apartmentService;
+  final ApartmentService _apartmentService;
   final FavoriteService _favoriteService;
   ApartmentController(this._apartmentService, this._favoriteService);
   // --- REACTIVE STATE ---
@@ -93,23 +93,13 @@ final ApartmentService _apartmentService;
     }
   }
 
-  /// يبحث في قائمة الشقق محليًا عن طريق العنوان أو الموقع.
   void searchApartments(String query) {
+    // لا تقم بالبحث إذا كان النص فارغًا، فقط أعد جلب القائمة الكاملة
     if (query.isEmpty) {
-      // إذا كان البحث فارغًا، اعرض جميع الشقق
-      filteredApartments.assignAll(allApartments);
+      fetchApartments(); // إعادة جلب بدون فلاتر
     } else {
-      final lowerCaseQuery = query.toLowerCase();
-      final result = allApartments.where((apartment) {
-        final titleMatch = apartment.title.toLowerCase().contains(
-          lowerCaseQuery,
-        );
-        final locationMatch = apartment.location.toLowerCase().contains(
-          lowerCaseQuery,
-        );
-        return titleMatch || locationMatch;
-      }).toList();
-      filteredApartments.assignAll(result);
+      // أرسل استعلام البحث كفلتر إلى الخادم
+      fetchApartments(filters: {'search': query});
     }
   }
 
