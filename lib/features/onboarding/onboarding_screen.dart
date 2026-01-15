@@ -48,7 +48,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             item: _pages[index],
             pageCount: _pages.length,
             currentIndex: _currentIndex,
-            buttonText: isLastPage ? 'Get Started' : 'Next',
+            buttonText: isLastPage ? 'get_started'.tr : 'next'.tr,
             onPressed: () {
               if (isLastPage) {
                 // Use GetX to clear navigation stack after onboarding

@@ -1,5 +1,4 @@
 // lib/services/websocket_service.dart
-
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -7,7 +6,6 @@ import 'package:project/core/storage/auth_storage.dart';
 
 class WebsocketService {
   final AuthStorage _authStorage = Get.find<AuthStorage>();
-
   IO.Socket? _socket;
 
   /// الاتصال بالسيرفر
@@ -28,9 +26,7 @@ class WebsocketService {
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
-          .setExtraHeaders({
-        'Authorization': 'Bearer $token',
-      })
+          .setExtraHeaders({'Authorization': 'Bearer $token'})
           .build(),
     );
 
@@ -51,10 +47,9 @@ class WebsocketService {
 
   /// الاستماع لحدث
   void listen(
-      String channelName,
-      String eventName,
-      void Function(String data) onData,
-      ) {
+    String eventName, // تم تعديل التوقيع ليكون أبسط
+    void Function(String data) onData,
+  ) {
     if (_socket == null) {
       print('❌ WebSocket not connected');
       return;
@@ -62,7 +57,6 @@ class WebsocketService {
 
     _socket!.on(eventName, (data) {
       if (data == null) return;
-
       if (data is String) {
         onData(data);
       } else {

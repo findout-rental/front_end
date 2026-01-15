@@ -41,7 +41,14 @@ dependencies:
   get: ^4.7.3
   dio: ^5.9.0
   get_storage: ^2.1.1
+<<<<<<< HEAD
+  socket_io_client: ^2.0.3
+  dart_pusher_channels: ^1.2.3
+  http: ^1.6.0
+  #pusher_client: 2.0.0
+=======
   socket_io_client: ^2.0.3+1
+>>>>>>> origin/feature/OTP
 
 dev_dependencies:
   flutter_test:

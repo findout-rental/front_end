@@ -1,15 +1,15 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:image_picker/image_picker.dart';
 import 'package:project/controllers/apartment_controller.dart';
 import 'package:project/shared_widgets/custom_text_field.dart';
-import 'dart:convert';
-
 
 class AddApartmentPage extends StatefulWidget {
   const AddApartmentPage({super.key});
+
   @override
   State<AddApartmentPage> createState() => _AddApartmentPageState();
 }
@@ -23,6 +23,9 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
   bool _hasBalcony = false;
   bool _hasAC = false;
   bool _hacInternet = false;
+
+  // Merged: Removed duplicate/obsolete properties from HEAD branch.
+  // The OTP branch's architecture is cleaner.
 
   final _step1FormKey = GlobalKey<FormState>();
   final _step2FormKey = GlobalKey<FormState>();
@@ -46,88 +49,75 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     super.dispose();
   }
 
-Future<FormData> _buildFormData() async {
-  final amenities = <String>[];
-  if (_hasBalcony) amenities.add('Balcony');
-  if (_hasAC) amenities.add('Air Conditioning');
-  if (_hacInternet) amenities.add('WiFi');
+  Future<FormData> _buildFormData() async {
+    final amenities = <String>[];
+    if (_hasBalcony) amenities.add('Balcony');
+    if (_hasAC) amenities.add('Air Conditioning');
+    if (_hacInternet) amenities.add('WiFi');
 
-  final formData = FormData();
-
-  // ---------- FIELDS ----------
-  formData.fields.addAll([
-    MapEntry('title', _titleController.text.trim()),
-    MapEntry('description', _descriptionController.text.trim()),
-    MapEntry('governorate', _governorateController.text.trim()),
-    MapEntry('city', _cityController.text.trim()),
-    MapEntry('address',
-        '${_governorateController.text.trim()}, ${_cityController.text.trim()}'),
-
-    MapEntry('nightly_price', _priceController.text.trim()),
-    MapEntry(
-      'monthly_price',
-      ((double.tryParse(_priceController.text) ?? 0) * 30).toString(),
-    ),
-
-    MapEntry('living_rooms', '1'),
-    MapEntry('size', _areaController.text.trim()),
-
-    MapEntry('bedrooms', _bedrooms.toString()),
-    MapEntry('bathrooms', _bathrooms.toString()),
-    MapEntry('max_guests', (_bedrooms * 2).toString()),
-  ]);
-
-  // ---------- AMENITIES ARRAY ----------
-  for (int i = 0; i < amenities.length; i++) {
-    formData.fields.add(MapEntry('amenities[$i]', amenities[i]));
+    final formData = FormData();
+    // ---------- FIELDS ----------
+    formData.fields.addAll([
+      MapEntry('title', _titleController.text.trim()),
+      MapEntry('description', _descriptionController.text.trim()),
+      MapEntry('governorate', _governorateController.text.trim()),
+      MapEntry('city', _cityController.text.trim()),
+      MapEntry(
+        'address',
+        '${_governorateController.text.trim()}, ${_cityController.text.trim()}',
+      ),
+      MapEntry('nightly_price', _priceController.text.trim()),
+      MapEntry(
+        'monthly_price',
+        ((double.tryParse(_priceController.text) ?? 0) * 30).toString(),
+      ),
+      MapEntry('living_rooms', '1'),
+      MapEntry('size', _areaController.text.trim()),
+      MapEntry('bedrooms', _bedrooms.toString()),
+      MapEntry('bathrooms', _bathrooms.toString()),
+      MapEntry('max_guests', (_bedrooms * 2).toString()),
+    ]);
+    // ---------- AMENITIES ARRAY ----------
+    for (int i = 0; i < amenities.length; i++) {
+      formData.fields.add(MapEntry('amenities[$i]', amenities[i]));
+    }
+    // ---------- PHOTOS ARRAY (STRINGS) ----------
+    for (int i = 0; i < _apartmentImages.length; i++) {
+      final bytes = await _apartmentImages[i].readAsBytes();
+      final base64Image = base64Encode(bytes);
+      formData.fields.add(MapEntry('photos[$i]', base64Image));
+    }
+    return formData;
   }
 
-  // ---------- PHOTOS ARRAY (STRINGS) ----------
-  for (int i = 0; i < _apartmentImages.length; i++) {
-    final bytes = await _apartmentImages[i].readAsBytes();
-    final base64Image = base64Encode(bytes);
-
-    // إذا الباك يحتاج data-uri جرب السطر التالي بدل base64Image:
-    // final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-
-    formData.fields.add(MapEntry('photos[$i]', base64Image));
+  Future<void> _pickImages() async {
+    final pickedFiles = await _picker.pickMultiImage(imageQuality: 80);
+    if (pickedFiles.isEmpty) return;
+    setState(() {
+      final remaining = 10 - _apartmentImages.length;
+      if (remaining <= 0) {
+        Get.snackbar('تنبيه', 'مسموح بحد أقصى 10 صور فقط');
+        return;
+      }
+      final toAdd = pickedFiles
+          .take(remaining)
+          .map((x) => File(x.path))
+          .toList();
+      _apartmentImages.addAll(toAdd);
+      if (pickedFiles.length > remaining) {
+        Get.snackbar('تنبيه', 'تم إضافة $remaining صور فقط لأن الحد الأقصى 10');
+      }
+    });
   }
-
-  return formData;
-}
-
-
-
-
-
-
-Future<void> _pickImages() async {
-  final pickedFiles = await _picker.pickMultiImage(imageQuality: 80);
-  if (pickedFiles.isEmpty) return;
-
-  setState(() {
-    final remaining = 10 - _apartmentImages.length;
-    if (remaining <= 0) {
-      Get.snackbar('تنبيه', 'مسموح بحد أقصى 10 صور فقط');
-      return;
-    }
-
-    final toAdd = pickedFiles.take(remaining).map((x) => File(x.path)).toList();
-    _apartmentImages.addAll(toAdd);
-
-    if (pickedFiles.length > remaining) {
-      Get.snackbar('تنبيه', 'تم إضافة $remaining صور فقط لأن الحد الأقصى 10');
-    }
-  });
-}
-
-  
 
   void _removeImage(int index) {
     setState(() {
       _apartmentImages.removeAt(index);
     });
   }
+
+  // Merged: Removed the old _submitForm() function from HEAD.
+  // The new logic is correctly placed in the Stepper's onStepContinue.
 
   @override
   Widget build(BuildContext context) {
@@ -143,25 +133,20 @@ Future<void> _pickImages() async {
           } else if (_currentStep < 2) {
             setState(() => _currentStep += 1);
           } else {
-  // ✅ تحقق قبل الإرسال (آخر خطوة)
-  if (_apartmentImages.isEmpty) {
-    Get.snackbar('خطأ', 'لازم تضيف صورة واحدة على الأقل');
-    return;
-  }
-
-  if (_apartmentImages.length > 10) {
-    Get.snackbar('خطأ', 'الحد الأقصى 10 صور');
-    return;
-  }
-
-  final controller = Get.find<ApartmentController>();
- final formData = await _buildFormData();
-final ok = await controller.addApartment(formData);
-if (ok) Navigator.pop(context);
-
-}
-
-
+            // ✅ Last step: Validate and submit via controller
+            if (_apartmentImages.isEmpty) {
+              Get.snackbar('خطأ', 'لازم تضيف صورة واحدة على الأقل');
+              return;
+            }
+            if (_apartmentImages.length > 10) {
+              Get.snackbar('خطأ', 'الحد الأقصى 10 صور');
+              return;
+            }
+            final controller = Get.find<ApartmentController>();
+            final formData = await _buildFormData();
+            final ok = await controller.addApartment(formData);
+            if (ok) Navigator.pop(context);
+          }
         },
         onStepCancel: _currentStep > 0
             ? () => setState(() => _currentStep -= 1)
@@ -171,6 +156,8 @@ if (ok) Navigator.pop(context);
     );
   }
 
+  // ... All the _buildStep...() and other UI methods remain unchanged ...
+  // (Paste the rest of your UI build methods here, they are not in conflict)
   List<Step> _buildSteps() {
     return [
       Step(
@@ -266,7 +253,6 @@ if (ok) Navigator.pop(context);
               ),
             ],
           ),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -278,7 +264,6 @@ if (ok) Navigator.pop(context);
             ],
           ),
           const SizedBox(height: 12),
-
           CustomTextField(
             controller: _areaController,
             hint: 'المساحة (م²)',
@@ -286,13 +271,10 @@ if (ok) Navigator.pop(context);
             keyboardType: TextInputType.number,
             validator: (v) => (v?.isEmpty ?? true) ? 'الحقل مطلوب' : null,
           ),
-
           const Divider(height: 24),
-
           const SizedBox(height: 16),
           Text('الميزات', style: theme.textTheme.titleMedium),
           const SizedBox(height: 10),
-
           CheckboxListTile(
             title: const Text('يوجد شرفة'),
             value: _hasBalcony,
@@ -300,7 +282,6 @@ if (ok) Navigator.pop(context);
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
           ),
-
           CheckboxListTile(
             title: const Text('يوجد تكييف'),
             value: _hasAC,
@@ -308,7 +289,6 @@ if (ok) Navigator.pop(context);
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
           ),
-
           CheckboxListTile(
             title: const Text('يوجد إنترنت'),
             value: _hacInternet,

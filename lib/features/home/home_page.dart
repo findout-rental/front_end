@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:project/controllers/apartment_controller.dart';
-import 'package:project/controllers/auth_controller.dart'; // ✅ جديد
+import 'package:project/controllers/auth_controller.dart';
 import 'package:project/controllers/home_controller.dart';
 import 'package:project/core/routing/app_router.dart';
-import 'package:project/shared_widgets/filter_bottom_sheet.dart';
 import 'package:project/features/my_apartments/presentation/screens/my_apartments_page.dart';
 import 'package:project/features/profile/profile_page.dart';
 import 'package:project/shared_widgets/apartment_list_item_widget.dart';
 import 'package:project/shared_widgets/custom_text_field.dart';
+import 'package:project/shared_widgets/filter_bottom_sheet.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,7 +21,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late final HomeController homeController;
   late final ApartmentController apartmentController;
-  late final AuthController authController; // ✅ جديد
+  late final AuthController authController;
 
   late final List<Widget> pages;
 
@@ -38,12 +39,14 @@ class _HomePageState extends State<HomePage> {
       MyApartmentsPage(),
       const ProfilePage(),
     ];
+
+    // Safe extra fetch (لن يضر لأن controller يمنع الطلب قبل login)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (apartmentController.allApartments.isEmpty &&
-        !apartmentController.isLoading.value) {
-      apartmentController.fetchApartments();
-    }
-  });
+      if (apartmentController.allApartments.isEmpty &&
+          !apartmentController.isLoading.value) {
+        apartmentController.fetchApartments();
+      }
+    });
   }
 
   @override
@@ -61,7 +64,6 @@ class _HomePageState extends State<HomePage> {
       // ✅ FAB يظهر فقط للـ Owner
       floatingActionButton: Obx(() {
         final isOwner = authController.currentUser.value?.isOwner == true;
-
         if (!isOwner) return const SizedBox.shrink();
 
         return FloatingActionButton(
@@ -70,8 +72,8 @@ class _HomePageState extends State<HomePage> {
           child: const Icon(Icons.add),
         );
       }),
-
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
@@ -81,14 +83,34 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(
-                  theme, Icons.home_filled, 'الرئيسية', 0, current == 0),
+                theme,
+                Icons.home_filled,
+                'الرئيسية',
+                0,
+                current == 0,
+              ),
               _buildNavItem(
-                  theme, Icons.favorite, 'المفضلة', 1, current == 1),
+                theme,
+                Icons.favorite,
+                'المفضلة',
+                1,
+                current == 1,
+              ),
               const SizedBox(width: 48),
               _buildNavItem(
-                  theme, Icons.apartment, 'شققي', 2, current == 2),
+                theme,
+                Icons.apartment,
+                'شققي',
+                2,
+                current == 2,
+              ),
               _buildNavItem(
-                  theme, Icons.person, 'حسابي', 3, current == 3),
+                theme,
+                Icons.person,
+                'حسابي',
+                3,
+                current == 3,
+              ),
             ],
           );
         }),
@@ -141,11 +163,9 @@ class _HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الرئيسية'),
+        title: Text('home'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -165,8 +185,9 @@ class _HomeContent extends StatelessWidget {
               children: [
                 Expanded(
                   child: CustomTextField(
-                    hint: 'ابحث عن منطقة، مدينة...',
+                    hint: 'search_hint'.tr,
                     icon: Icons.search,
+                    onChanged: controller.searchApartments, // ✅ تفعيل البحث
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -196,7 +217,7 @@ class _HomeContent extends StatelessWidget {
               }
 
               if (controller.filteredApartments.isEmpty) {
-                return const Center(child: Text('No apartments found.'));
+                return Center(child: Text('no_apartments_found'.tr));
               }
 
               return ListView.builder(
@@ -205,8 +226,8 @@ class _HomeContent extends StatelessWidget {
                   final apartment = controller.filteredApartments[index];
                   return ApartmentListItemWidget(
                     apartment: apartment,
-                    onFavoriteToggle: () =>
-                        controller.toggleFavoriteStatus(apartment.id),
+                    onFavoriteToggle: () => controller
+                        .toggleFavoriteStatus(apartment.id.toString()),
                   );
                 },
               );
@@ -228,12 +249,14 @@ class _FavoritesContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('المفضلة')),
+      appBar: AppBar(title: Text('favorites'.tr)),
       body: Obx(() {
         final favorites = controller.favoriteApartments;
+
         if (favorites.isEmpty) {
-          return const Center(child: Text('قائمة المفضلة فارغة.'));
+          return Center(child: Text('no_apartments_found'.tr));
         }
+
         return ListView.builder(
           itemCount: favorites.length,
           itemBuilder: (context, index) {
@@ -241,7 +264,7 @@ class _FavoritesContent extends StatelessWidget {
             return ApartmentListItemWidget(
               apartment: apartment,
               onFavoriteToggle: () =>
-                  controller.toggleFavoriteStatus(apartment.id),
+                  controller.toggleFavoriteStatus(apartment.id.toString()),
             );
           },
         );

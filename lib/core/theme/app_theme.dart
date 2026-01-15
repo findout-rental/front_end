@@ -42,8 +42,7 @@ class AppTheme {
 
     colorScheme: ColorScheme.light(
       primary: AppColors.primary,
-      secondary: AppColors.primary,
-      background: AppColors.background, // from second project
+      secondary: AppColors.primary, // from second project
       surface: AppColors.light.surface,
       onPrimary: AppColors.white,
       onSurface: AppColors.light.text,

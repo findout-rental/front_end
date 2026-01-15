@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:project/controllers/auth_controller.dart';
 import 'package:project/core/routing/app_router.dart';
-import 'package:project/features/auth/otp_verification_page.dart';
+// import 'package:project/features/auth/otp_verification_page.dart'; // This import seems unused now
 import 'package:project/shared_widgets/custom_text_field.dart';
 import 'package:project/shared_widgets/image_picker_box.dart';
 import 'package:project/shared_widgets/password_field.dart';
@@ -72,16 +72,15 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   /// ===============================
-  /// SIGN UP FLOW (OTP FIRST)
+  /// SIGN UP FLOW
   /// ===============================
-Future<void> _handleSignUp() async {
-  await controller.register(
-    isTenant: _isTenant,
-    personalImage: _personalImage,
-    idImage: _idImage,
-  );
-}
-
+  Future<void> _handleSignUp() async {
+    await controller.register(
+      isTenant: _isTenant,
+      personalImage: _personalImage,
+      idImage: _idImage,
+    );
+  }
 
   // ===============================
   // UI
@@ -89,14 +88,13 @@ Future<void> _handleSignUp() async {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Obx(
-                () => Column(
+            () => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Icon(
@@ -106,12 +104,11 @@ Future<void> _handleSignUp() async {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Create Your Account',
+                  'create_your_account'.tr,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleLarge,
                 ),
                 const SizedBox(height: 20),
-
                 // Role
                 RoleToggle(
                   optionOneText: 'Tenant',
@@ -120,50 +117,43 @@ Future<void> _handleSignUp() async {
                   onChanged: (v) => setState(() => _isTenant = v),
                 ),
                 const SizedBox(height: 20),
-
                 CustomTextField(
-                  hint: 'First Name',
+                  hint: 'first_name'.tr,
                   icon: Icons.person_outline,
                   controller: controller.firstNameController,
                 ),
                 const SizedBox(height: 12),
-
                 CustomTextField(
-                  hint: 'Last Name',
+                  hint: 'last_name'.tr,
                   icon: Icons.person_outline,
                   controller: controller.lastNameController,
                 ),
                 const SizedBox(height: 12),
-
                 CustomTextField(
-                  hint: 'Phone Number',
+                  hint: 'phone_number'.tr,
                   icon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
                   controller: controller.phoneController,
                 ),
                 const SizedBox(height: 12),
-
                 CustomTextField(
-                  hint: 'Date Of Birth',
+                  hint: 'date_of_birth'.tr,
                   icon: Icons.calendar_today_outlined,
                   controller: _dobController,
                   readOnly: true,
                   onTap: () => _pickDateOfBirth(context),
                 ),
                 const SizedBox(height: 12),
-
                 PasswordField(
-                  hint: 'Password',
+                  hint: 'password'.tr,
                   controller: controller.passwordController,
                 ),
                 const SizedBox(height: 12),
-
                 PasswordField(
-                  hint: 'Confirm Password',
+                  hint: 'confirm_password'.tr,
                   controller: controller.confirmPasswordController,
                 ),
                 const SizedBox(height: 20),
-
                 Row(
                   children: [
                     ImagePickerBox(
@@ -181,7 +171,6 @@ Future<void> _handleSignUp() async {
                     ),
                   ],
                 ),
-
                 if (controller.errorMessage.value.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -190,19 +179,18 @@ Future<void> _handleSignUp() async {
                     textAlign: TextAlign.center,
                   ),
                 ],
-
                 const SizedBox(height: 24),
-
+                
+                // --- MERGED PART ---
                 PrimaryButton(
                   text: controller.isLoading.value
-                      ? 'Processing...'
-                      : 'Sign up',
-                  onPressed:
-                  controller.isLoading.value ? null : _handleSignUp,
+                      ? 'Processing...'.tr // Use clearer loading text, still translatable
+                      : 'sign_up'.tr, // Keep using translation
+                  onPressed: controller.isLoading.value ? null : _handleSignUp,
                 ),
+                // --- END OF MERGED PART ---
 
                 const SizedBox(height: 16),
-
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
@@ -210,7 +198,7 @@ Future<void> _handleSignUp() async {
                     children: [
                       const TextSpan(text: "Already have an account? "),
                       TextSpan(
-                        text: 'Sign In',
+                        text: 'sign_in'.tr,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: theme.primaryColor,
@@ -222,7 +210,6 @@ Future<void> _handleSignUp() async {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 30),
               ],
             ),

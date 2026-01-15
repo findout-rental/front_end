@@ -1,8 +1,8 @@
 // lib/services/apartment_service.dart
 
 import 'package:dio/dio.dart';
-import 'package:project/core/network/api_endpoints.dart';
 import 'package:project/core/network/dio_client.dart';
+import 'package:project/core/network/api_endpoints.dart';
 
 class ApartmentService {
   final DioClient _dioClient;

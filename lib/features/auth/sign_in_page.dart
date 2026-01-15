@@ -37,7 +37,7 @@ class SignInPage extends StatelessWidget {
                   const SizedBox(height: 12),
 
                   Text(
-                    'Welcome Back!',
+                    'welcome_back'.tr,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleLarge,
                   ),
@@ -47,7 +47,7 @@ class SignInPage extends StatelessWidget {
                   // Phone
                   CustomTextField(
                     controller: controller.phoneController,
-                    hint: 'Phone Number',
+                    hint: 'phone_number'.tr,
                     icon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                   ),
@@ -57,7 +57,7 @@ class SignInPage extends StatelessWidget {
                   // Password
                   PasswordField(
                     controller: controller.passwordController,
-                    hint: 'Password',
+                    hint: 'password'.tr,
                   ),
 
                   Align(
@@ -66,7 +66,7 @@ class SignInPage extends StatelessWidget {
                       onPressed: () =>
                           Get.toNamed(AppRouter.forgotPassword),
                       child: Text(
-                        'Forget Password?',
+                        'forgot_password'.tr,
                         style: TextStyle(color: theme.primaryColor),
                       ),
                     ),
@@ -89,9 +89,7 @@ class SignInPage extends StatelessWidget {
 
                   // Login button
                   PrimaryButton(
-                    text: controller.isLoading.value
-                        ? 'Signing in...'
-                        : 'Sign in',
+                    text: controller.isLoading.value ? '...' : 'sign_in'.tr,
                     onPressed: controller.isLoading.value
                         ? null
                         : controller.login,
@@ -107,7 +105,7 @@ class SignInPage extends StatelessWidget {
                       children: [
                         const TextSpan(text: "Don't have an account? "),
                         TextSpan(
-                          text: 'Sign up',
+                          text: 'sign_up'.tr,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: theme.primaryColor,

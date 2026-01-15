@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:project/controllers/auth_controller.dart';
+import 'package:project/controllers/language_controller.dart';
 import 'package:project/controllers/theme_controller.dart';
 import 'package:project/core/routing/app_router.dart';
 import 'package:project/data/models/user_model.dart';
@@ -13,11 +15,14 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ThemeController themeController = Get.find<ThemeController>();
-    final user = UserModel.dummy(); // ⚠️ لاحقًا: من AuthController
+    final LanguageController langController = Get.find<LanguageController>();
+
+    // لاحقًا الأفضل يكون من AuthController.currentUser
+    final user = UserModel.dummy();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('حسابي (تجريبي)'),
+        title: Text('profile'.tr),
         centerTitle: true,
       ),
       body: ListView(
@@ -56,7 +61,6 @@ class ProfilePage extends StatelessWidget {
               ),
             ],
           ),
-
           const Divider(height: 50),
 
           // -------------------------------------------------------------------
@@ -65,15 +69,35 @@ class ProfilePage extends StatelessWidget {
           _buildProfileOption(
             context: context,
             icon: Icons.brightness_6_outlined,
-            title: 'الوضع',
+            title: 'theme'.tr,
             trailing: SizedBox(
               width: 150,
               child: Obx(() {
                 return RoleToggle(
-                  optionOneText: 'نهاري',
-                  optionTwoText: 'ليلي',
+                  optionOneText: 'Light'.tr,
+                  optionTwoText: 'Night'.tr,
                   value: themeController.isLightMode.value,
                   onChanged: themeController.toggleTheme,
+                );
+              }),
+            ),
+          ),
+
+          // -------------------------------------------------------------------
+          // 🌐 Language Toggle
+          // -------------------------------------------------------------------
+          _buildProfileOption(
+            context: context,
+            icon: Icons.language_outlined,
+            title: 'language'.tr,
+            trailing: SizedBox(
+              width: 150,
+              child: Obx(() {
+                return RoleToggle(
+                  optionOneText: 'English',
+                  optionTwoText: 'العربية',
+                  value: langController.isEnglish,
+                  onChanged: (_) => langController.toggleLanguage(),
                 );
               }),
             ),
@@ -85,7 +109,7 @@ class ProfilePage extends StatelessWidget {
           _buildProfileOption(
             context: context,
             icon: Icons.edit_outlined,
-            title: 'تعديل الملف الشخصي',
+            title: 'edit_profile'.tr,
             onTap: () => Get.toNamed(AppRouter.editProfile),
           ),
 
@@ -95,37 +119,34 @@ class ProfilePage extends StatelessWidget {
           _buildProfileOption(
             context: context,
             icon: Icons.settings_outlined,
-            title: 'الإعدادات',
+            title: 'settings'.tr,
             onTap: () {},
           ),
 
           const Divider(height: 40),
 
           // -------------------------------------------------------------------
-          // 🚪 Logout
+          // 🚪 Logout (merged: real logout + confirmation dialog)
           // -------------------------------------------------------------------
-          // 🚪 Logout
-_buildProfileOption(
-  context: context,
-  icon: Icons.logout,
-  title: 'تسجيل الخروج',
-  isLogout: true,
-  onTap: () {
-  Get.defaultDialog(
-    title: 'تأكيد',
-    middleText: 'هل أنت متأكد أنك تريد تسجيل الخروج؟',
-    textConfirm: 'خروج',
-    textCancel: 'إلغاء',
-    confirmTextColor: Colors.white,
-    onConfirm: () {
-      Get.back();
-      Get.find<AuthController>().logout();
-    },
-  );
-},
-
-),
-
+          _buildProfileOption(
+            context: context,
+            icon: Icons.logout,
+            title: 'logout'.tr,
+            isLogout: true,
+            onTap: () {
+              Get.defaultDialog(
+                title: 'confirm'.tr, // لو ما عندك key جاهز غيّره لنص ثابت
+                middleText: 'confirm_logout'.tr, // لو ما عندك key جاهز غيّره لنص ثابت
+                textConfirm: 'logout'.tr,
+                textCancel: 'cancel'.tr,
+                confirmTextColor: Colors.white,
+                onConfirm: () {
+                  Get.back();
+                  Get.find<AuthController>().logout();
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -157,7 +178,7 @@ _buildProfileOption(
         ),
       ),
       trailing:
-      trailing ??
+          trailing ??
           (isLogout ? null : const Icon(Icons.arrow_forward_ios, size: 16)),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(vertical: 4.0),

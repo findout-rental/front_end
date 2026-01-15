@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/utils.dart';
 
 class RoleToggle extends StatelessWidget {
   final String optionOneText;
@@ -23,8 +24,8 @@ class RoleToggle extends StatelessWidget {
   }) {
     return RoleToggle(
       key: key,
-      optionOneText: 'Tenant',
-      optionTwoText: 'Owner',
+      optionOneText: 'tenant'.tr,
+      optionTwoText: 'owner'.tr,
       value: isTenant,
       onChanged: onChanged,
     );

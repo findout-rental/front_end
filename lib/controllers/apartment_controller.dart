@@ -1,14 +1,16 @@
 // apartment_controller.dart
 import 'package:get/get.dart' hide FormData;
 import 'package:dio/dio.dart' as dio;
+
 import 'package:project/core/storage/auth_storage.dart';
+import 'package:project/controllers/auth_controller.dart';
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/services/apartment_service.dart';
-import 'package:project/services/favorite_service.dart';
 import 'package:project/services/auth_service.dart';
-import 'package:project/controllers/auth_controller.dart';
+import 'package:project/services/favorite_service.dart';
 
 class ApartmentController extends GetxController {
+  // --- DEPENDENCIES ---
   final ApartmentService _apartmentService;
   final FavoriteService _favoriteService;
   final AuthService _authService;
@@ -21,7 +23,6 @@ class ApartmentController extends GetxController {
     this._authStorage,
   );
 
-  // ✅ تحميل افتراضي = false (أفضل من true)
   final isLoading = false.obs;
   final errorMessage = ''.obs;
 
@@ -32,9 +33,8 @@ class ApartmentController extends GetxController {
       allApartments.where((apt) => apt.isFavorited).toList();
 
   // ---------------------------------------------------------------------------
-  // Role resolution (الأهم)
-  // نعتمد أولاً على AuthController.currentUser لأنه أكيد موجود بعد login
-  // وبعدين fallback على AuthStorage.user إن وُجد
+  // Role resolution
+  // نعتمد أولاً على AuthController.currentUser ثم fallback على AuthStorage.user
   // ---------------------------------------------------------------------------
   String? get _roleFromAuthController {
     try {
@@ -59,9 +59,6 @@ class ApartmentController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
-    // ✅ إذا المستخدم جاهز -> fetch فوراً
-    // ✅ إذا ليس جاهز -> نراقب currentUser وأول ما يصير غير null نعمل fetch مرة واحدة
     _setupAutoFetchOnLogin();
   }
 
@@ -96,10 +93,7 @@ class ApartmentController extends GetxController {
       errorMessage.value = '';
 
       // ✅ إذا ما عنا role لسه (قبل login) لا تعمل request
-      if (role == null) {
-        // نخليها بدون خطأ، بس نوقف التحميل
-        return;
-      }
+      if (role == null) return;
 
       // ✅ 1) اختار endpoint حسب role
       final apartmentsFuture = isOwner
@@ -121,7 +115,7 @@ class ApartmentController extends GetxController {
         apartmentsResponse = await apartmentsFuture;
       }
 
-      // ✅ 3) استخراج الشقق
+      // ✅ 3) استخراج الشقق (يدعم أكثر من شكل response)
       final apartmentData = _extractApartmentsList(apartmentsResponse.data);
 
       final fetchedList = apartmentData
@@ -131,15 +125,15 @@ class ApartmentController extends GetxController {
 
       // ✅ 4) استخراج المفضلة (Tenant فقط)
       final favoriteIds = <String>{};
-
       if (isTenant && favoritesResponse != null) {
-        final favRaw = favoritesResponse.data;
-        final favList = _extractFavoritesList(favRaw);
+        final favList = _extractFavoritesList(favoritesResponse.data);
         favoriteIds.addAll(favList.map((e) => e.toString()));
       }
 
+      // ✅ 5) تعليم الشقق المفضلة
       for (final apartment in fetchedList) {
-        apartment.isFavorited = favoriteIds.contains(apartment.id.toString());
+        final idStr = apartment.id.toString();
+        apartment.isFavorited = favoriteIds.contains(idStr);
       }
 
       allApartments.assignAll(fetchedList);
@@ -151,8 +145,19 @@ class ApartmentController extends GetxController {
     }
   }
 
+  // =========================
+  // SEARCH (from getX_v2)
+  // =========================
+  void searchApartments(String query) {
+    if (query.trim().isEmpty) {
+      fetchApartments(); // بدون فلاتر
+    } else {
+      fetchApartments(filters: {'search': query.trim()});
+    }
+  }
+
   // ---------------------------------------------------------------------------
-  // Helpers
+  // Helpers (from my-work)
   // ---------------------------------------------------------------------------
   List<dynamic> _extractApartmentsList(dynamic raw) {
     if (raw is! Map<String, dynamic>) return [];
@@ -207,7 +212,7 @@ class ApartmentController extends GetxController {
   }
 
   // =========================
-  // ADD APARTMENT
+  // ADD APARTMENT (merged: owner-only + detailed validation errors)
   // =========================
   Future<bool> addApartment(dio.FormData formData) async {
     final auth = Get.find<AuthController>();
@@ -218,24 +223,35 @@ class ApartmentController extends GetxController {
 
     try {
       isLoading.value = true;
+
       await _apartmentService.addApartment(formData);
 
-      // ✅ بعد الإضافة: جيب بيانات owner مباشرة
+      // بعد الإضافة: جيب بيانات owner مباشرة/حسب role
       await fetchApartments();
 
       Get.snackbar('نجاح', 'تمت إضافة الشقة بنجاح');
       return true;
     } on dio.DioException catch (e) {
-  final data = e.response?.data;
+      final data = e.response?.data;
+      String msg = 'فشل إضافة الشقة';
 
-  final String msg = (data is Map && data['message'] != null)
-      ? data['message'].toString()
-      : 'فشل إضافة الشقة';
+      // دمج منطق Laravel validation errors من getX_v2
+      if (data is Map) {
+        final errors = data['errors'];
+        if (errors is Map && errors.isNotEmpty) {
+          final firstKey = errors.keys.first;
+          final firstVal = errors[firstKey];
+          if (firstVal is List && firstVal.isNotEmpty) {
+            msg = firstVal.first.toString();
+          }
+        } else if (data['message'] != null) {
+          msg = data['message'].toString();
+        }
+      }
 
-  Get.snackbar('خطأ', msg);
-  return false;
-}
- finally {
+      Get.snackbar('خطأ', msg);
+      return false;
+    } finally {
       isLoading.value = false;
     }
   }
@@ -247,12 +263,15 @@ class ApartmentController extends GetxController {
     // ✅ ممنوع للـ owner (لأنه endpoint Tenant)
     if (!isTenant) return;
 
-    final index = allApartments.indexWhere((apt) => apt.id == apartmentId);
+    final index = allApartments.indexWhere(
+      (apt) => apt.id.toString() == apartmentId,
+    );
     if (index == -1) return;
 
     final apartment = allApartments[index];
     final originalStatus = apartment.isFavorited;
 
+    // optimistic update
     apartment.isFavorited = !originalStatus;
     allApartments.refresh();
     filteredApartments.refresh();
@@ -262,6 +281,7 @@ class ApartmentController extends GetxController {
           ? await _favoriteService.removeFromFavorites(apartmentId)
           : await _favoriteService.addToFavorites(apartmentId);
     } catch (e) {
+      // rollback
       apartment.isFavorited = originalStatus;
       allApartments.refresh();
       filteredApartments.refresh();
