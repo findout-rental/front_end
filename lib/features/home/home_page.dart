@@ -22,11 +22,11 @@ class HomePage extends StatelessWidget {
     // put: ينشئ المراقب إذا لم يكن موجودًا
     final HomeController homeController = Get.put(HomeController());
     final ApartmentController apartmentController = Get.put(
-  ApartmentController(
-    Get.find(), // dependency 1
-    Get.find(), // dependency 2
-  ),
-);
+      ApartmentController(
+        Get.find(), // dependency 1
+        Get.find(), // dependency 2
+      ),
+    );
 
     final List<Widget> widgetOptions = <Widget>[
       _HomeContent(controller: apartmentController),
@@ -56,11 +56,11 @@ class HomePage extends StatelessWidget {
           () => Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
-              _buildNavItem(context, Icons.home_filled, 'الرئيسية', 0),
-              _buildNavItem(context, Icons.favorite, 'المفضلة', 1),
+              _buildNavItem(context, Icons.home_filled, 'home'.tr, 0),
+              _buildNavItem(context, Icons.favorite, 'favorites'.tr, 1),
               const SizedBox(width: 48), // مساحة للزر العائم
-              _buildNavItem(context, Icons.apartment, 'شققي', 2),
-              _buildNavItem(context, Icons.person, 'حسابي', 3),
+              _buildNavItem(context, Icons.apartment, 'my_apartments'.tr, 2),
+              _buildNavItem(context, Icons.person, 'profile'.tr, 3),
             ],
           ),
         ),
@@ -118,7 +118,7 @@ class _HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الرئيسية'),
+        title: Text('home'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -138,7 +138,7 @@ class _HomeContent extends StatelessWidget {
               children: [
                 Expanded(
                   child: CustomTextField(
-                    hint: 'ابحث عن منطقة، مدينة...',
+                    hint: 'search_hint'.tr,
                     icon: Icons.search,
                     // ✅ ربط البحث بالمراقب
                     onChanged: (query) => controller.searchApartments(query),
@@ -177,7 +177,7 @@ class _HomeContent extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               if (controller.filteredApartments.isEmpty) {
-                return const Center(child: Text('No apartments found.'));
+                return const Center(child: Text('no_apartments_found'));
               }
               return ListView.builder(
                 itemCount: controller.filteredApartments.length,
@@ -208,12 +208,12 @@ class _FavoritesContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('المفضلة')),
+      appBar: AppBar(title: Text('favorites'.tr)),
       // ✅ استخدام Obx لمراقبة قائمة المفضلة
       body: Obx(() {
         final favoritedApartments = controller.favoriteApartments;
         if (favoritedApartments.isEmpty) {
-          return const Center(child: Text('قائمة المفضلة فارغة.'));
+          return const Center(child: Text('no_apartments_found'));
         }
         return ListView.builder(
           itemCount: favoritedApartments.length,

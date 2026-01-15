@@ -15,12 +15,12 @@ class MyApartmentsPage extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('شققي'),
+          title: const Text('my_apartments'),
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'نشطة'),
-              Tab(text: 'مكتملة'),
-              Tab(text: 'ملغاة'),
+              Tab(text: 'active'),
+              Tab(text: 'completed'),
+              Tab(text: 'cancelled'),
             ],
           ),
         ),

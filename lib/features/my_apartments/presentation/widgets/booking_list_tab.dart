@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/controllers/booking_controller.dart';
+import 'package:project/core/routing/app_router.dart';
 import 'package:project/data/models/booking_model.dart';
 import 'package:project/shared_widgets/apartment_list_item_widget.dart';
 
@@ -15,7 +16,7 @@ class BookingListTab extends StatelessWidget {
     if (bookings.isEmpty) {
       return const Center(
         child: Text(
-          'لا توجد حجوزات في هذا القسم.',
+          'no_bookings_found',
           style: TextStyle(color: Colors.grey),
         ),
       );
@@ -71,20 +72,37 @@ class BookingListTab extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'حجز نشط',
+              'booking_active',
               style: TextStyle(
                 color: Colors.green.shade700,
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const Spacer(), // لإضافة مساحة مرنة
+            // ✅ زر التعديل الجديد
+            TextButton(
+              onPressed: () {
+                Get.toNamed(
+                  AppRouter.booking,
+                  arguments: {
+                    'apartment': booking.apartment,
+                    'booking': booking, // مرر الحجز الحالي
+                  },
+                );
+              },
+              child: const Text('edit_booking'),
+            ),
+
+            const SizedBox(width: 8),
+
             // ✅ زر الإلغاء مع نافذة تأكيد
             ElevatedButton(
               onPressed: () {
                 Get.defaultDialog(
-                  title: "تأكيد الإلغاء",
-                  middleText: "هل أنت متأكد أنك تريد إلغاء هذا الحجز؟",
-                  textConfirm: "نعم، قم بالإلغاء",
-                  textCancel: "لا",
+                  title: "confirm_cancellation",
+                  middleText: "are_you_sure_cancel_booking",
+                  textConfirm: "yes",
+                  textCancel: "no",
                   buttonColor: Colors.red,
                   confirmTextColor: Colors.white,
                   cancelTextColor: Colors.black,
@@ -100,14 +118,14 @@ class BookingListTab extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text('إلغاء الحجز'),
+              child: const Text('cancel_booking'),
             ),
           ],
         );
         break;
       case BookingStatus.completed:
         statusWidget = Text(
-          'حجز مكتمل',
+          'booking_completed',
           style: TextStyle(
             color: theme.primaryColor,
             fontWeight: FontWeight.bold,
@@ -116,7 +134,7 @@ class BookingListTab extends StatelessWidget {
         break;
       case BookingStatus.cancelled:
         statusWidget = Text(
-          'حجز ملغي',
+          'booking_cancelled',
           style: TextStyle(
             color: Colors.grey.shade600,
             fontWeight: FontWeight.bold,

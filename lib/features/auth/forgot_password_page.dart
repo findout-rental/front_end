@@ -25,7 +25,7 @@ class ForgotPasswordPage extends StatelessWidget {
             const SizedBox(height: 20),
             CustomTextField(
               controller: phoneController,
-              hint: 'Phone Number',
+              hint: 'phone_number'.tr,
               icon: Icons.phone,
               keyboardType: TextInputType.phone,
             ),

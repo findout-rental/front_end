@@ -42,4 +42,18 @@ class BookingService {
     // يتصل بـ POST /api/bookings/{id}/cancel
     return _dioClient.post('${ApiEndpoints.bookings}/$bookingId/cancel');
   }
+
+  Future<Response> updateBooking({
+    required String bookingId,
+    required DateTimeRange newDateRange,
+  }) {
+    // يتصل بـ PUT /api/bookings/{id}
+    return _dioClient.put(
+      '${ApiEndpoints.bookings}/$bookingId',
+      data: {
+        'start_date': newDateRange.start.toIso8601String().substring(0, 10),
+        'end_date': newDateRange.end.toIso8601String().substring(0, 10),
+      },
+    );
+  }
 }

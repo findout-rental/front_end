@@ -135,4 +135,41 @@ class BookingController extends GetxController {
       // isCancelling.value = false;
     }
   }
+
+  Future<void> updateBooking({
+    required String bookingId,
+    required DateTimeRange newDateRange,
+  }) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      await _bookingService.updateBooking(
+        bookingId: bookingId,
+        newDateRange: newDateRange,
+      );
+
+      // بعد النجاح، قم بتحديث قائمة الحجوزات
+      await fetchMyBookings();
+
+      Get.back(); // العودة من صفحة التعديل
+      Get.snackbar(
+        'Success',
+        'Your booking has been updated successfully!',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      errorMessage.value =
+          'Failed to update booking. The new dates might be unavailable.';
+      Get.snackbar(
+        'Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      print("Update Booking Error: $e");
+      rethrow;
+    } finally {
+      isLoading.value = false;
+    }
+  }
 }

@@ -17,7 +17,7 @@ class ProfilePage extends StatelessWidget {
     final user = UserModel.dummy();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('حسابي (تجريبي)'), centerTitle: true),
+      appBar: AppBar(title: Text('profile'.tr), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(20.0),
         children: [
@@ -59,13 +59,13 @@ class ProfilePage extends StatelessWidget {
           _buildProfileOption(
             context: context,
             icon: Icons.brightness_6_outlined,
-            title: 'الوضع',
+            title: 'theme'.tr,
             trailing: SizedBox(
               width: 150,
               child: Obx(() {
                 return RoleToggle(
-                  optionOneText: 'نهاري',
-                  optionTwoText: 'ليلي',
+                  optionOneText: 'Light'.tr,
+                  optionTwoText: 'Night'.tr,
                   value: themeController.isLightMode.value,
                   onChanged: themeController.toggleTheme,
                 );
@@ -92,14 +92,14 @@ class ProfilePage extends StatelessWidget {
           _buildProfileOption(
             context: context,
             icon: Icons.edit_outlined,
-            title: 'تعديل الملف الشخصي',
+            title: 'edit_profile'.tr,
             onTap: () => Get.toNamed(AppRouter.editProfile),
           ),
 
           _buildProfileOption(
             context: context,
             icon: Icons.settings_outlined,
-            title: 'الإعدادات',
+            title: 'settings'.tr,
             onTap: () {},
           ),
 
@@ -108,12 +108,12 @@ class ProfilePage extends StatelessWidget {
           _buildProfileOption(
             context: context,
             icon: Icons.logout,
-            title: 'تسجيل الخروج',
+            title: 'logout'.tr,
             isLogout: true,
             onTap: () {
               Get.snackbar(
-                'تنبيه',
-                'تم تعطيل تسجيل الخروج في الوضع التجريبي',
+                'Logout'.tr,
+                'You have been logged out successfully.'.tr,
                 snackPosition: SnackPosition.BOTTOM,
               );
             },

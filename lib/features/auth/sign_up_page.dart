@@ -131,7 +131,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Create Your Account',
+                  'create_your_account'.tr,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleLarge,
                 ),
@@ -148,26 +148,26 @@ class _SignUpPageState extends State<SignUpPage> {
 
                 // --- Text Fields ---
                 CustomTextField(
-                  hint: 'First Name',
+                  hint: 'first_name'.tr,
                   icon: Icons.person_outline,
                   controller: controller.firstNameController,
                 ),
                 const SizedBox(height: 12),
                 CustomTextField(
-                  hint: 'Last Name',
+                  hint: 'last_name'.tr,
                   icon: Icons.person_outline,
                   controller: controller.lastNameController,
                 ),
                 const SizedBox(height: 12),
                 CustomTextField(
-                  hint: 'Phone Number',
+                  hint: 'phone_number'.tr,
                   icon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
                   controller: controller.phoneController,
                 ),
                 const SizedBox(height: 12),
                 CustomTextField(
-                  hint: 'Date Of Birth',
+                  hint: 'date_of_birth'.tr,
                   icon: Icons.calendar_today_outlined,
                   controller: _dobController, // استخدم المراقب المحلي للعرض
                   readOnly: true,
@@ -175,12 +175,12 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 12),
                 PasswordField(
-                  hint: 'Password',
+                  hint: 'password'.tr,
                   controller: controller.passwordController,
                 ),
                 const SizedBox(height: 12),
                 PasswordField(
-                  hint: 'Confirm Password',
+                  hint: 'confirm_password'.tr,
                   controller: controller.confirmPasswordController,
                 ),
                 const SizedBox(height: 20),
@@ -218,8 +218,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 // --- Action Button ---
                 PrimaryButton(
                   text: controller.isLoading.value
-                      ? 'Processing...'
-                      : 'Sign up',
+                      ? '...'
+                      : 'sign_up'.tr,
                   onPressed: controller.isLoading.value ? null : _handleSignUp,
                 ),
                 const SizedBox(height: 16),
@@ -232,7 +232,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     children: [
                       const TextSpan(text: "Already have an account? "),
                       TextSpan(
-                        text: 'Sign In',
+                        text: 'sign_in'.tr,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: theme.primaryColor,

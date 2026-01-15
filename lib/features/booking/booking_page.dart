@@ -1,21 +1,45 @@
+// lib/features/booking/booking_page.dart
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:project/controllers/booking_controller.dart';
 import 'package:project/data/models/apartment_model.dart';
+import 'package:project/data/models/booking_model.dart';
 import 'package:project/shared_widgets/primary_button.dart';
 
 class BookingPage extends StatefulWidget {
   final Apartment apartment;
-  const BookingPage({super.key, required this.apartment});
+  final BookingModel? existingBooking; // ✅ معامل اختياري لوضع التعديل
+
+  const BookingPage({
+    super.key,
+    required this.apartment,
+    this.existingBooking, // ✅
+  });
 
   @override
   State<BookingPage> createState() => _BookingPageState();
 }
 
 class _BookingPageState extends State<BookingPage> {
+  // --- LOCAL STATE ---
   DateTimeRange? _selectedDateRange;
+  // (يمكن إضافة منطق التحقق من التوافر هنا لاحقًا)
 
-  int _guestCount = 1;
+  // --- DEPENDENCIES ---
+  final BookingController controller = Get.find<BookingController>();
 
+  @override
+  void initState() {
+    super.initState();
+    // ✅ إذا كنا في وضع التعديل، املأ التواريخ الحالية
+    if (widget.existingBooking != null) {
+      _selectedDateRange = widget.existingBooking!.dateRange;
+    }
+  }
+
+  /// يفتح منتقي التاريخ ويحدث الحالة
   Future<void> _pickDateRange() async {
     final newDateRange = await showDateRangePicker(
       context: context,
@@ -34,10 +58,42 @@ class _BookingPageState extends State<BookingPage> {
     }
   }
 
+  /// ✅ دالة جديدة لمعالجة عملية الإرسال (إنشاء أو تعديل)
+  void _submit() {
+    if (_selectedDateRange == null) return;
+
+    final bool isEditing = widget.existingBooking != null;
+
+    if (isEditing) {
+      // --- وضع التعديل ---
+      controller.updateBooking(
+        bookingId: widget.existingBooking!.bookingId,
+        newDateRange: _selectedDateRange!,
+      );
+    } else {
+      // --- وضع الإنشاء ---
+      controller
+          .createBooking(
+            apartment: widget.apartment,
+            dateRange: _selectedDateRange!,
+          )
+          .then((_) {
+            // بعد النجاح، أغلق الصفحة وأعد 'true' لإعلام الصفحة السابقة
+            if (mounted) Navigator.pop(context, true);
+          })
+          .catchError((_) {
+            // لا تفعل شيئًا في حالة الخطأ، المراقب سيعرض Snackbar
+          });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // ✅ تحديد هل نحن في وضع التعديل
+    final bool isEditing = widget.existingBooking != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('تأكيد الحجز')),
+      appBar: AppBar(title: Text(isEditing ? 'edit_booking'.tr : 'confirm_booking'.tr)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -49,19 +105,26 @@ class _BookingPageState extends State<BookingPage> {
             _buildSectionDivider(),
             _buildPriceDetails(),
             const SizedBox(height: 32),
-            PrimaryButton(
-              text: 'إتمام الحجز والدفع',
-              onPressed: _selectedDateRange != null
-                  ? () {
-                      Navigator.pop(context, true);
-                    }
-                  : null,
+
+            // ✅ استخدام Obx لمراقبة حالة التحميل
+            Obx(
+              () => PrimaryButton(
+                text: controller.isLoading.value
+                    ? '...'
+                    : (isEditing ? 'save_changes'.tr : 'complete_booking_and_payment'.tr),
+                onPressed:
+                    (_selectedDateRange != null && !controller.isLoading.value)
+                    ? _submit
+                    : null,
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
+  // --- Helper Widgets to build UI ---
 
   Widget _buildApartmentSummary() {
     final theme = Theme.of(context);
@@ -113,10 +176,10 @@ class _BookingPageState extends State<BookingPage> {
     final formatter = DateFormat('d MMM, yyyy');
     final checkIn = _selectedDateRange != null
         ? formatter.format(_selectedDateRange!.start)
-        : 'اختر';
+        : 'choose'; // 'اختر'
     final checkOut = _selectedDateRange != null
         ? formatter.format(_selectedDateRange!.end)
-        : 'اختر';
+        : 'choose';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +201,7 @@ class _BookingPageState extends State<BookingPage> {
     final theme = Theme.of(context);
     final nights = _selectedDateRange?.duration.inDays ?? 0;
     final pricePerNight = widget.apartment.pricePerNight;
-    final serviceFee = 50;
+    final serviceFee = 50; // يمكن أن تأتي من الخادم
     final total = (pricePerNight * nights) + serviceFee;
 
     return Column(

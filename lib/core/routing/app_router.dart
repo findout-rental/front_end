@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 // Models
 import 'package:project/data/models/apartment_model.dart';
+import 'package:project/data/models/booking_model.dart';
 import 'package:project/data/models/chat_model.dart';
 import 'package:project/features/auth/forgot_password_page.dart';
 import 'package:project/features/auth/reset_password_page.dart';
@@ -74,21 +75,37 @@ class AppRouter {
       name: apartmentDetail,
       page: () => ApartmentDetailPage(apartment: Get.arguments as Apartment),
     ),
-    GetPage(
-      name: booking,
-      page: () => BookingPage(apartment: Get.arguments as Apartment),
-    ),
+    // GetPage(
+    //   name: booking,
+    //   page: () => BookingPage(apartment: Get.arguments as Apartment),
+    // ),
     GetPage(name: addApartment, page: () => const AddApartmentPage()),
     GetPage(name: notifications, page: () => NotificationsScreen()),
-    GetPage(
-      name: AppRouter.home,
-      page: () => const HomePage(),
-      bindings: [AuthBinding(), BookingBinding()],
-    ),
+    // GetPage(
+    //   name: AppRouter.home,
+    //   page: () => const HomePage(),
+    //   bindings: [AuthBinding(), BookingBinding()],
+    // ),
     GetPage(name: editProfile, page: () => const EditProfilePage()),
 
     GetPage(name: forgotPassword, page: () => const ForgotPasswordPage()),
     GetPage(name: resetPassword, page: () => const ResetPasswordPage()),
+
+
+    GetPage(
+  name: AppRouter.booking,
+  page: () {
+    // ✅ استخراج المعاملات
+    final arguments = Get.arguments as Map<String, dynamic>;
+    final apartment = arguments['apartment'] as Apartment;
+    final booking = arguments['booking'] as BookingModel?; // قد يكون null
+    
+    return BookingPage(
+      apartment: apartment,
+      existingBooking: booking,
+    );
+  },
+),
   ];
 
   // --------------------------------

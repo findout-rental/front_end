@@ -27,7 +27,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.initState();
     // ملء الحقول بالبيانات الحالية للمستخدم
     final user = authController.currentUser.value;
-    final nameParts = user?.fullName.split(' ') ?? ['First', 'Last'];
+    final nameParts = user?.fullName.split(' ') ?? ['first'.tr, 'last'.tr];
     _firstNameController = TextEditingController(text: nameParts.first);
     _lastNameController = TextEditingController(
       text: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
@@ -61,7 +61,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('تعديل الملف الشخصي')),
+      appBar: AppBar(title: const Text('edit_profile')),
       body: Obx(
         () => SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -93,20 +93,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
               const SizedBox(height: 30),
               CustomTextField(
                 controller: _firstNameController,
-                hint: 'الاسم الأول',
+                hint: 'first_name',
                 icon: Icons.person_outline,
               ),
               const SizedBox(height: 16),
               CustomTextField(
                 controller: _lastNameController,
-                hint: 'الاسم الأخير',
+                hint: 'last_name',
                 icon: Icons.person_outline,
               ),
               const SizedBox(height: 30),
               PrimaryButton(
                 text: authController.isLoading.value
-                    ? 'جاري الحفظ...'
-                    : 'حفظ التغييرات',
+                    ? 'saving...'
+                    : 'save_changes',
                 onPressed: authController.isLoading.value ? null : _submit,
               ),
             ],
