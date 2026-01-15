@@ -1,4 +1,5 @@
 import 'package:get_storage/get_storage.dart';
+import 'package:project/data/models/user_model.dart';
 
 class AuthStorage {
   static const _tokenKey = 'token';
@@ -29,4 +30,16 @@ class AuthStorage {
   }
 
   bool get isLoggedIn => token != null;
+
+
+
+  UserModel? get userModel {
+    final u = user;
+    if (u == null) return null;
+    return UserModel.fromJson(Map<String, dynamic>.from(u));
+  }
+
+  UserRole get role => userModel?.role ?? UserRole.unknown;
+
+  String? get roleString => user?['role']?.toString();
 }

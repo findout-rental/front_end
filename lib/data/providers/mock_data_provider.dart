@@ -116,40 +116,39 @@ final List<Message> _mockMessages = [
     isMe: true,
   ),
 ];
-
 // -----------------------------------------------------------------------------
-// Apartments
+// Apartments (Mock)
 // -----------------------------------------------------------------------------
 final List<Apartment> _mockApartments = [
-  Apartment(
-    id: '1',
-    title: 'شقة فاخرة بإطلالة على المدينة',
-    location: 'الرياض، حي الياسمين',
-    price: '5,000 ريال/شهري',
-    isFavorited: true,
-    isAvailable: true,
-    imageUrl:
-    'https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg',
-    images: [
+  Apartment.fromJson({
+    'id': 1,
+    'governorate': 'دمشق',
+    'city': 'دمشق',
+    'address': 'المزة - شارع 123',
+    'nightly_price': 50,
+    'monthly_price': 1500,
+    'amenities': ['WiFi', 'Air Conditioning', 'Balcony'],
+    'photos': [
       'https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg',
       'https://images.pexels.com/photos/271795/pexels-photo-271795.jpeg',
       'https://images.pexels.com/photos/1668860/pexels-photo-1668860.jpeg',
     ],
-    pricePerNight: 400,
-  ),
-  Apartment(
-    id: '2',
-    title: 'استوديو مودرن في قلب العاصمة',
-    location: 'الدمام، حي الشاطئ',
-    price: '2,500 ريال/شهري',
-    isFavorited: false,
-    isAvailable: false,
-    imageUrl:
-    'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg',
-    images: [
+    'is_available': true,
+    'is_favorited': true,
+  }),
+  Apartment.fromJson({
+    'id': 2,
+    'governorate': 'ريف دمشق',
+    'city': 'جرمانا',
+    'address': 'الشارع الرئيسي - بناء 5',
+    'nightly_price': 30,
+    'monthly_price': 900,
+    'amenities': ['WiFi'],
+    'photos': [
       'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg',
       'https://images.pexels.com/photos/1571458/pexels-photo-1571458.jpeg',
     ],
-    pricePerNight: 400,
-  ),
+    'is_available': false,
+    'is_favorited': false,
+  }),
 ];

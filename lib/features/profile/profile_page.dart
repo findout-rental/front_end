@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:project/controllers/auth_controller.dart';
 import 'package:project/controllers/theme_controller.dart';
 import 'package:project/core/routing/app_router.dart';
 import 'package:project/data/models/user_model.dart';
@@ -103,19 +104,28 @@ class ProfilePage extends StatelessWidget {
           // -------------------------------------------------------------------
           // 🚪 Logout
           // -------------------------------------------------------------------
-          _buildProfileOption(
-            context: context,
-            icon: Icons.logout,
-            title: 'تسجيل الخروج',
-            isLogout: true,
-            onTap: () {
-              Get.snackbar(
-                'تنبيه',
-                'تم تعطيل تسجيل الخروج في الوضع التجريبي',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-          ),
+          // 🚪 Logout
+_buildProfileOption(
+  context: context,
+  icon: Icons.logout,
+  title: 'تسجيل الخروج',
+  isLogout: true,
+  onTap: () {
+  Get.defaultDialog(
+    title: 'تأكيد',
+    middleText: 'هل أنت متأكد أنك تريد تسجيل الخروج؟',
+    textConfirm: 'خروج',
+    textCancel: 'إلغاء',
+    confirmTextColor: Colors.white,
+    onConfirm: () {
+      Get.back();
+      Get.find<AuthController>().logout();
+    },
+  );
+},
+
+),
+
         ],
       ),
     );

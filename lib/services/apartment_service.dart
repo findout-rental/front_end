@@ -8,23 +8,52 @@ class ApartmentService {
   final DioClient _dioClient;
   ApartmentService(this._dioClient);
 
-  // ✅ دالة لجلب الشقق مع فلاتر اختيارية
+  // =========================
+  // TENANT: Get apartments list (public/tenant)
+  // =========================
   Future<Response> getApartments({Map<String, dynamic>? filters}) {
     return _dioClient.get(
-      // ملاحظة: قد يكون المسار مختلفًا بناءً على دور المستخدم
-      // هذا هو مسار المستأجر
-      '/apartments',
+      ApiEndpoints.apartments, // ✅ /apartments
       queryParameters: filters,
     );
   }
 
-  Future<Response> addApartment(FormData formData) {
-    // ✅ استخدم المسار الصحيح للمالك
-    return _dioClient.post('/owner/apartments', data: formData);
+  // =========================
+  // OWNER: Get my apartments list
+  // =========================
+  Future<Response> getOwnerApartments({Map<String, dynamic>? filters}) {
+    return _dioClient.get(
+      ApiEndpoints.ownerApartments, // ✅ /owner/apartments
+      queryParameters: filters,
+    );
   }
 
-  // دالة لجلب تفاصيل شقة معينة
+  // =========================
+  // OWNER: Add apartment
+  // =========================
+  Future<Response> addApartment(FormData formData) {
+    return _dioClient.post(
+      ApiEndpoints.ownerApartments, // ✅ /owner/apartments
+      data: formData,
+    );
+  }
+
+  // =========================
+  // TENANT: Apartment details
+  // =========================
   Future<Response> getApartmentDetails(String apartmentId) {
-    return _dioClient.get('/apartments/$apartmentId');
+    return _dioClient.get(
+      '${ApiEndpoints.apartments}/$apartmentId', // ✅ /apartments/{id}
+    );
+  }
+
+  // =========================
+  // OWNER: My apartment details (إذا عندك endpoint خاص بالمالك)
+  // ملاحظة: إذا الباك عنده /owner/apartments/{id}
+  // =========================
+  Future<Response> getOwnerApartmentDetails(String apartmentId) {
+    return _dioClient.get(
+      '${ApiEndpoints.ownerApartments}/$apartmentId', // ✅ /owner/apartments/{id}
+    );
   }
 }

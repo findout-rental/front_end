@@ -37,42 +37,45 @@ class UserModel {
 
   /// تحويل JSON القادم من الخادم إلى UserModel
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    UserRole parseRole(String? roleString) {
-      switch (roleString) {
-        case 'owner':
-          return UserRole.owner;
-        case 'tenant':
-          return UserRole.tenant;
-        default:
-          return UserRole.unknown;
-      }
+  UserRole parseRole(String? roleString) {
+    switch (roleString) {
+      case 'owner':
+        return UserRole.owner;
+      case 'tenant':
+        return UserRole.tenant;
+      default:
+        return UserRole.unknown;
     }
-
-    String parseFullName(String? first, String? last, String? full) {
-      if (full != null && full.isNotEmpty) return full;
-      final f = first ?? '';
-      final l = last ?? '';
-      return '$f $l'.trim();
-    }
-
-    return UserModel(
-      uid: json['id']?.toString() ?? json['uid']?.toString() ?? '',
-      fullName: parseFullName(
-        json['first_name'],
-        json['last_name'],
-        json['full_name'],
-      ),
-      phone: json['mobile_number'] ?? json['phone'] ?? '',
-      role: parseRole(json['role']),
-      profileImageUrl: json['profile_image_url'],
-      dateOfBirth: json['date_of_birth'] != null
-          ? DateTime.tryParse(json['date_of_birth'])
-          : null,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
-          : DateTime.now(),
-    );
   }
+
+  String parseFullName(String? first, String? last, String? full) {
+    if (full != null && full.isNotEmpty) return full;
+    final f = first ?? '';
+    final l = last ?? '';
+    return '$f $l'.trim();
+  }
+
+  return UserModel(
+    uid: (json['id'] ?? json['uid'] ?? '').toString(),
+
+    fullName: parseFullName(
+      json['first_name']?.toString(),
+      json['last_name']?.toString(),
+      json['full_name']?.toString(),
+    ),
+
+    phone: (json['mobile_number'] ?? json['phone'] ?? '').toString(),
+
+    role: parseRole(json['role']?.toString()),
+
+    profileImageUrl: json['profile_image_url']?.toString(),
+
+    dateOfBirth: DateTime.tryParse(json['date_of_birth']?.toString() ?? ''),
+
+    createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+  );
+}
+
 
   /// مستخدم وهمي (للتجربة والـ UI)
   factory UserModel.dummy() {

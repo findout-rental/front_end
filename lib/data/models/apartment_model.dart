@@ -1,25 +1,29 @@
+import 'package:project/core/network/api_endpoints.dart';
+
 class Apartment {
   final String id;
+
+  // UI fields (قديمة بس نولّدها من بيانات الباك)
   final String imageUrl;
   final String title;
   final String location;
   final String price;
 
-  /// UI state (can change locally)
   bool isFavorited;
-
-  /// Gallery images
   final List<String> images;
 
-  /// Availability status
   final bool isAvailable;
-
-  /// Rating info
   final double rating;
   final int reviewCount;
-
-  /// Business logic (booking)
   final int pricePerNight;
+
+  // ✅ حقول جديدة مفيدة (اختياري لكن أنصح فيها)
+  final String governorate;
+  final String city;
+  final String address;
+  final double nightlyPrice;
+  final double monthlyPrice;
+  final List<String> amenities;
 
   Apartment({
     required this.id,
@@ -33,68 +37,74 @@ class Apartment {
     this.rating = 4.5,
     this.reviewCount = 80,
     required this.pricePerNight,
+
+    required this.governorate,
+    required this.city,
+    required this.address,
+    required this.nightlyPrice,
+    required this.monthlyPrice,
+    required this.amenities,
   });
 
+  static String _resolveUrl(String path) {
+    if (path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+
+    // baseUrl عندك غالبًا ينتهي بـ /api، صور Laravel تكون خارج /api
+    final base = ApiEndpoints.baseUrl.replaceAll(RegExp(r'/api/?$'), '');
+    if (path.startsWith('/')) return '$base$path';
+    return '$base/$path';
+  }
+
   factory Apartment.fromJson(Map<String, dynamic> json) {
-  final String city = json['city'] ?? '';
-  final String governorate = json['governorate'] ?? '';
-  final String address = json['address'] ?? '';
+    final String city = (json['city'] ?? '').toString();
+    final String governorate = (json['governorate'] ?? '').toString();
+    final String address = (json['address'] ?? '').toString();
 
-  final List imagesList = json['images'] ?? [];
+    final List<dynamic> photosRaw = (json['photos'] as List?) ?? [];
+    final List<String> photos = photosRaw.map((e) => _resolveUrl(e.toString())).toList();
 
-  return Apartment(
-    id: json['id']?.toString() ?? '',
+    final double nightly = double.tryParse((json['nightly_price'] ?? '0').toString()) ?? 0;
+    final double monthly = double.tryParse((json['monthly_price'] ?? '0').toString()) ?? 0;
 
-    // ✅ أول صورة أو placeholder
-    imageUrl: imagesList.isNotEmpty
-        ? imagesList.first.toString()
-        : '',
+    final List<dynamic> amenitiesRaw = (json['amenities'] as List?) ?? [];
+    final List<String> amenities = amenitiesRaw.map((e) => e.toString()).toList();
 
-    // ✅ عنوان منطقي
-    title: json['title'] ??
-        'Apartment in $city',
-
-    // ✅ دمج الموقع بدل location الوهمي
-    location: [
+    final location = [
       address,
       city,
       governorate,
-    ].where((e) => e.isNotEmpty).join(', '),
+    ].where((e) => e.trim().isNotEmpty).join(', ');
 
-    // ✅ السعر للـ UI (string)
-    price: json['price_per_night'] != null
-        ? '${json['price_per_night']}'
-        : '0',
+    return Apartment(
+      id: (json['id'] ?? '').toString(),
 
-    isFavorited: json['is_favorited'] ?? false,
+      imageUrl: photos.isNotEmpty ? photos.first : '',
+      images: photos,
 
-    images: imagesList.map((e) => e.toString()).toList(),
+      title: json['title']?.toString().isNotEmpty == true
+          ? json['title'].toString()
+          : 'شقة في $city',
 
-    isAvailable: json['is_available'] ?? true,
+      location: location,
+      price: nightly > 0 ? nightly.toString() : (monthly > 0 ? monthly.toString() : '0'),
 
-    rating: json['rating'] != null
-        ? double.tryParse(json['rating'].toString()) ?? 4.5
-        : 4.5,
+      // favorites إذا عندك endpoint منفصل، خليه false وبيتم ضبطه بالكونترولر
+      isFavorited: (json['is_favorited'] ?? false) == true,
 
-    reviewCount: json['review_count'] ?? 0,
+      isAvailable: (json['is_available'] ?? true) == true,
 
-    // ✅ business logic
-    pricePerNight: json['price_per_night'] ?? 0,
-  );
-}
+      rating: double.tryParse((json['rating'] ?? '4.5').toString()) ?? 4.5,
+      reviewCount: int.tryParse((json['review_count'] ?? '0').toString()) ?? 0,
 
+      pricePerNight: nightly.toInt(),
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'image_url': imageUrl,
-    'title': title,
-    'location': location,
-    'price': price,
-    'is_favorited': isFavorited,
-    'images': images,
-    'is_available': isAvailable,
-    'rating': rating,
-    'review_count': reviewCount,
-    'price_per_night': pricePerNight,
-  };
+      governorate: governorate,
+      city: city,
+      address: address,
+      nightlyPrice: nightly,
+      monthlyPrice: monthly,
+      amenities: amenities,
+    );
+  }
 }

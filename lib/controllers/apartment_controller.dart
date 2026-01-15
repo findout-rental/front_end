@@ -1,5 +1,7 @@
+// apartment_controller.dart
 import 'package:get/get.dart' hide FormData;
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
+import 'package:project/core/storage/auth_storage.dart';
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/services/apartment_service.dart';
 import 'package:project/services/favorite_service.dart';
@@ -10,14 +12,17 @@ class ApartmentController extends GetxController {
   final ApartmentService _apartmentService;
   final FavoriteService _favoriteService;
   final AuthService _authService;
+  final AuthStorage _authStorage;
 
   ApartmentController(
     this._apartmentService,
     this._favoriteService,
     this._authService,
+    this._authStorage,
   );
 
-  final isLoading = true.obs;
+  // ✅ تحميل افتراضي = false (أفضل من true)
+  final isLoading = false.obs;
   final errorMessage = ''.obs;
 
   final allApartments = <Apartment>[].obs;
@@ -26,10 +31,60 @@ class ApartmentController extends GetxController {
   List<Apartment> get favoriteApartments =>
       allApartments.where((apt) => apt.isFavorited).toList();
 
+  // ---------------------------------------------------------------------------
+  // Role resolution (الأهم)
+  // نعتمد أولاً على AuthController.currentUser لأنه أكيد موجود بعد login
+  // وبعدين fallback على AuthStorage.user إن وُجد
+  // ---------------------------------------------------------------------------
+  String? get _roleFromAuthController {
+    try {
+      final auth = Get.find<AuthController>();
+      final user = auth.currentUser.value;
+      if (user == null) return null;
+      if (user.isOwner) return 'owner';
+      if (user.isTenant) return 'tenant';
+      return user.role.name; // fallback
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? get _roleFromStorage => _authStorage.user?['role']?.toString();
+
+  String? get role => _roleFromAuthController ?? _roleFromStorage;
+
+  bool get isOwner => role == 'owner';
+  bool get isTenant => role == 'tenant';
+
   @override
   void onInit() {
     super.onInit();
-    fetchApartments();
+
+    // ✅ إذا المستخدم جاهز -> fetch فوراً
+    // ✅ إذا ليس جاهز -> نراقب currentUser وأول ما يصير غير null نعمل fetch مرة واحدة
+    _setupAutoFetchOnLogin();
+  }
+
+  void _setupAutoFetchOnLogin() {
+    AuthController? auth;
+    try {
+      auth = Get.find<AuthController>();
+    } catch (_) {
+      auth = null;
+    }
+
+    if (auth?.currentUser.value != null) {
+      fetchApartments();
+      return;
+    }
+
+    if (auth != null) {
+      ever(auth.currentUser, (u) {
+        if (u != null && allApartments.isEmpty && !isLoading.value) {
+          fetchApartments();
+        }
+      });
+    }
   }
 
   // =========================
@@ -38,22 +93,53 @@ class ApartmentController extends GetxController {
   Future<void> fetchApartments({Map<String, dynamic>? filters}) async {
     try {
       isLoading.value = true;
+      errorMessage.value = '';
 
-      final responses = await Future.wait([
-        _apartmentService.getApartments(filters: filters),
-        _favoriteService.getFavoriteApartmentIds(),
-      ]);
+      // ✅ إذا ما عنا role لسه (قبل login) لا تعمل request
+      if (role == null) {
+        // نخليها بدون خطأ، بس نوقف التحميل
+        return;
+      }
 
-      final List<dynamic> apartmentData = responses[0].data['data'] ?? [];
-      final fetchedList =
-          apartmentData.map((e) => Apartment.fromJson(e)).toList();
+      // ✅ 1) اختار endpoint حسب role
+      final apartmentsFuture = isOwner
+          ? _apartmentService.getOwnerApartments(filters: filters)
+          : _apartmentService.getApartments(filters: filters);
 
-      final List<dynamic> favoriteIdData = responses[1].data['data'] ?? [];
-      final favoriteIds =
-          favoriteIdData.map((e) => e.toString()).toSet();
+      dio.Response apartmentsResponse;
+      dio.Response? favoritesResponse;
+
+      // ✅ 2) favorites فقط للـ tenant
+      if (isTenant) {
+        final responses = await Future.wait([
+          apartmentsFuture,
+          _favoriteService.getFavoriteApartmentIds(),
+        ]);
+        apartmentsResponse = responses[0] as dio.Response;
+        favoritesResponse = responses[1] as dio.Response;
+      } else {
+        apartmentsResponse = await apartmentsFuture;
+      }
+
+      // ✅ 3) استخراج الشقق
+      final apartmentData = _extractApartmentsList(apartmentsResponse.data);
+
+      final fetchedList = apartmentData
+          .whereType<Map>()
+          .map((e) => Apartment.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+
+      // ✅ 4) استخراج المفضلة (Tenant فقط)
+      final favoriteIds = <String>{};
+
+      if (isTenant && favoritesResponse != null) {
+        final favRaw = favoritesResponse.data;
+        final favList = _extractFavoritesList(favRaw);
+        favoriteIds.addAll(favList.map((e) => e.toString()));
+      }
 
       for (final apartment in fetchedList) {
-        apartment.isFavorited = favoriteIds.contains(apartment.id);
+        apartment.isFavorited = favoriteIds.contains(apartment.id.toString());
       }
 
       allApartments.assignAll(fetchedList);
@@ -65,50 +151,102 @@ class ApartmentController extends GetxController {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+  List<dynamic> _extractApartmentsList(dynamic raw) {
+    if (raw is! Map<String, dynamic>) return [];
+
+    final data = raw['data'];
+
+    // { data: { apartments: [...] } }
+    if (data is Map<String, dynamic> && data['apartments'] is List) {
+      return List<dynamic>.from(data['apartments']);
+    }
+
+    // { data: [...] }
+    if (data is List) {
+      return List<dynamic>.from(data);
+    }
+
+    // { apartments: [...] }
+    if (raw['apartments'] is List) {
+      return List<dynamic>.from(raw['apartments']);
+    }
+
+    // { data: { items: [...] } }
+    if (data is Map<String, dynamic> && data['items'] is List) {
+      return List<dynamic>.from(data['items']);
+    }
+
+    // { data: { data: { apartments: [...] } } }
+    if (data is Map<String, dynamic> &&
+        data['data'] is Map<String, dynamic> &&
+        (data['data'] as Map<String, dynamic>)['apartments'] is List) {
+      return List<dynamic>.from(
+        (data['data'] as Map<String, dynamic>)['apartments'],
+      );
+    }
+
+    return [];
+  }
+
+  List<dynamic> _extractFavoritesList(dynamic raw) {
+    if (raw is! Map<String, dynamic>) return [];
+    final data = raw['data'];
+
+    // { data: [ ... ] }
+    if (data is List) return data;
+
+    // { data: { ids: [ ... ] } }
+    if (data is Map<String, dynamic> && data['ids'] is List) {
+      return List<dynamic>.from(data['ids']);
+    }
+
+    return [];
+  }
+
   // =========================
   // ADD APARTMENT
   // =========================
+  Future<bool> addApartment(dio.FormData formData) async {
+    final auth = Get.find<AuthController>();
+    if (auth.currentUser.value?.isOwner != true) {
+      Get.snackbar('خطأ', 'هذه العملية خاصة بالمالك فقط');
+      return false;
+    }
 
-  
-  Future<bool> addApartment(FormData formData) async {
-  try {
-    isLoading.value = true;
+    try {
+      isLoading.value = true;
+      await _apartmentService.addApartment(formData);
 
-    await _apartmentService.addApartment(formData);
-    await fetchApartments();
+      // ✅ بعد الإضافة: جيب بيانات owner مباشرة
+      await fetchApartments();
 
-    Get.snackbar('نجاح', 'تمت إضافة الشقة بنجاح');
-    return true;
-  } on DioException catch (e) {
+      Get.snackbar('نجاح', 'تمت إضافة الشقة بنجاح');
+      return true;
+    } on dio.DioException catch (e) {
   final data = e.response?.data;
 
-  String msg = 'فشل إضافة الشقة';
-
-  if (data is Map) {
-    // لو في errors (Laravel validation)
-    final errors = data['errors'];
-    if (errors is Map && errors.isNotEmpty) {
-      final firstKey = errors.keys.first;
-      final firstVal = errors[firstKey];
-      if (firstVal is List && firstVal.isNotEmpty) {
-        msg = firstVal.first.toString();
-      }
-    } else if (data['message'] != null) {
-      msg = data['message'].toString();
-    }
-  }
+  final String msg = (data is Map && data['message'] != null)
+      ? data['message'].toString()
+      : 'فشل إضافة الشقة';
 
   Get.snackbar('خطأ', msg);
   return false;
 }
-
-}
-
+ finally {
+      isLoading.value = false;
+    }
+  }
 
   // =========================
   // FAVORITES
   // =========================
   Future<void> toggleFavoriteStatus(String apartmentId) async {
+    // ✅ ممنوع للـ owner (لأنه endpoint Tenant)
+    if (!isTenant) return;
+
     final index = allApartments.indexWhere((apt) => apt.id == apartmentId);
     if (index == -1) return;
 
@@ -117,6 +255,7 @@ class ApartmentController extends GetxController {
 
     apartment.isFavorited = !originalStatus;
     allApartments.refresh();
+    filteredApartments.refresh();
 
     try {
       originalStatus
@@ -125,6 +264,7 @@ class ApartmentController extends GetxController {
     } catch (e) {
       apartment.isFavorited = originalStatus;
       allApartments.refresh();
+      filteredApartments.refresh();
     }
   }
 }

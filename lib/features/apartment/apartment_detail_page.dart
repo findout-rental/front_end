@@ -1,6 +1,9 @@
+import 'dart:typed_data';
 import 'package:animated_rating_stars/animated_rating_stars.dart';
 import 'package:flutter/material.dart';
+import 'package:project/core/network/api_endpoints.dart';
 import 'package:project/core/routing/app_router.dart';
+import 'package:project/core/utils/photo_helper.dart';
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/chat_model.dart';
 import 'package:project/shared_widgets/primary_button.dart';
@@ -63,6 +66,8 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   // Image Gallery
   // ---------------------------------------------------------------------------
   Widget _buildImageGallery() {
+    final images = widget.apartment.images;
+
     return SliverAppBar(
       expandedHeight: 280,
       pinned: true,
@@ -73,30 +78,28 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            PageView.builder(
-              itemCount: widget.apartment.images.length,
-              onPageChanged: (i) => setState(() => _currentImageIndex = i),
-              itemBuilder: (_, i) => Image.network(
-                widget.apartment.images[i],
-                fit: BoxFit.cover,
-                color: Colors.black38,
-                colorBlendMode: BlendMode.darken,
-                loadingBuilder: (_, child, progress) =>
-                progress == null
-                    ? child
-                    : const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
+            if (images.isEmpty)
+              Container(
+                color: Colors.black26,
+                child: const Center(
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 60,
+                    color: Colors.white70,
                   ),
                 ),
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.broken_image,
-                  size: 50,
-                  color: Colors.white60,
+              )
+            else
+              PageView.builder(
+                itemCount: images.length,
+                onPageChanged: (i) => setState(() => _currentImageIndex = i),
+                itemBuilder: (_, i) => _buildSmartImage(
+                  images[i],
+                  darkOverlay: true,
                 ),
               ),
-            ),
-            _buildImageIndicator(),
+
+            if (images.length > 1) _buildImageIndicator(),
           ],
         ),
       ),
@@ -104,26 +107,107 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   }
 
   Widget _buildImageIndicator() {
+    final count = widget.apartment.images.length;
     return Align(
       alignment: Alignment.bottomCenter,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.apartment.images.length, (i) {
+          children: List.generate(count, (i) {
             return AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: const EdgeInsets.symmetric(horizontal: 4),
               height: 8,
               width: _currentImageIndex == i ? 24 : 8,
               decoration: BoxDecoration(
-                color:
-                _currentImageIndex == i ? Colors.white : Colors.white54,
+                color: _currentImageIndex == i ? Colors.white : Colors.white54,
                 borderRadius: BorderRadius.circular(12),
               ),
             );
           }),
         ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // ✅ Smart image (Base64 / /storage / http)
+  // ---------------------------------------------------------------------------
+  Widget _buildSmartImage(String raw, {bool darkOverlay = false}) {
+  final s = raw.trim();
+  if (s.isEmpty) return _brokenImage();
+
+  // 1) ✅ Base64 (حتى لو ضمن URL أو /storage//9j/..)
+  final Uint8List? bytes = PhotoHelper.decodeFromAnything(s);
+  if (bytes != null) {
+    return Image.memory(
+      bytes,
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      color: darkOverlay ? Colors.black38 : null,
+      colorBlendMode: darkOverlay ? BlendMode.darken : null,
+      errorBuilder: (_, __, ___) => _brokenImage(),
+    );
+  }
+
+  // 2) ✅ URL كامل
+  if (s.startsWith('http://') || s.startsWith('https://')) {
+    return Image.network(
+      s,
+      fit: BoxFit.cover,
+      color: darkOverlay ? Colors.black38 : null,
+      colorBlendMode: darkOverlay ? BlendMode.darken : null,
+      loadingBuilder: (_, child, progress) =>
+          progress == null
+              ? child
+              : const Center(child: CircularProgressIndicator(color: Colors.white)),
+      errorBuilder: (_, __, ___) => _brokenImage(),
+    );
+  }
+
+  // 3) ✅ /storage/... أو storage/... (رابط نسبي)
+  final url = _toAbsoluteUrl(s);
+  if (url == null) return _brokenImage();
+
+  return Image.network(
+    url,
+    fit: BoxFit.cover,
+    color: darkOverlay ? Colors.black38 : null,
+    colorBlendMode: darkOverlay ? BlendMode.darken : null,
+    loadingBuilder: (_, child, progress) =>
+        progress == null
+            ? child
+            : const Center(child: CircularProgressIndicator(color: Colors.white)),
+    errorBuilder: (_, __, ___) => _brokenImage(),
+  );
+}
+
+
+  /// يحول المسار النسبي إلى رابط كامل
+  /// - /storage/xxx  -> http://ip:8000/storage/xxx
+  /// - storage/xxx   -> http://ip:8000/storage/xxx
+  /// ملاحظة: إذا كان input فيه "/storage//9j/..." هذا Base64 وكان لازم ينمسك بالأعلى
+  String? _toAbsoluteUrl(String raw) {
+    final host = ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+
+    var s = raw.trim();
+
+    // شيل أي تكرار "/storage//" لو موجود
+    s = s.replaceFirst('/storage//', '/storage/');
+
+    // إذا صار فيه base64 بالغلط هون، رجّع null (كان لازم ينمسك فوق)
+    if (s.startsWith('/storage//9j/') || s.startsWith('/9j/')) return null;
+
+    if (s.startsWith('/')) return '$host$s';
+    return '$host/$s';
+  }
+
+  Widget _brokenImage() {
+    return Container(
+      color: Colors.black26,
+      child: const Center(
+        child: Icon(Icons.broken_image, size: 50, color: Colors.white60),
       ),
     );
   }
@@ -190,8 +274,13 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
               size: 18,
             ),
             const SizedBox(width: 4),
-            Text(widget.apartment.location,
-                style: theme.textTheme.bodySmall),
+            Expanded(
+              child: Text(
+                widget.apartment.location,
+                style: theme.textTheme.bodySmall,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ],
@@ -202,15 +291,16 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   // Sections
   // ---------------------------------------------------------------------------
   Widget _buildDescription() => _section(
-    'عن هذه الشقة',
-    'هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة...',
-  );
+        'عن هذه الشقة',
+        'هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة...',
+      );
 
   Widget _buildFeatures() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('الميزات', style: Theme.of(context).textTheme.titleMedium),
+        Text('الميزات', style: theme.textTheme.titleMedium),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -253,7 +343,7 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
     final theme = Theme.of(context);
     const ownerName = 'شركة العقار الذهبي';
     const ownerImage = 'https://i.pravatar.cc/150?img=12';
-    const ownerId = 'owner_1'; // ✅ مهم للتوافق مع ChatModel
+    const ownerId = 'owner_1';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,6 +406,7 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
         child: Row(
           children: [
             Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('السعر', style: theme.textTheme.bodySmall),
@@ -332,13 +423,13 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
             Expanded(
               child: _isAvailable
                   ? PrimaryButton(
-                text: 'احجز الآن',
-                onPressed: _navigateToBooking,
-              )
+                      text: 'احجز الآن',
+                      onPressed: _navigateToBooking,
+                    )
                   : ElevatedButton(
-                onPressed: _cancelBooking,
-                child: const Text('إلغاء الحجز'),
-              ),
+                      onPressed: _cancelBooking,
+                      child: const Text('إلغاء الحجز'),
+                    ),
             ),
           ],
         ),
@@ -386,6 +477,5 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
     );
   }
 
-  Widget _buildSectionDivider() =>
-      const Divider(height: 48, thickness: 0.8);
+  Widget _buildSectionDivider() => const Divider(height: 48, thickness: 0.8);
 }

@@ -78,6 +78,7 @@ class InitialBinding extends Bindings {
         Get.find<ApartmentService>(),
         Get.find<FavoriteService>(),
         Get.find<AuthService>(),
+         Get.find<AuthStorage>(),
       ),
       permanent: true,
     );
