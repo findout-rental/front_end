@@ -1,30 +1,17 @@
 import 'dart:async';
-
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/booking_model.dart';
 import 'package:project/services/booking_service.dart';
 import 'package:project/data/providers/mock_data_provider.dart';
 
 class BookingController extends GetxController {
-  // ===============================
-  // DEPENDENCY
-  // ===============================
   final BookingService _bookingService;
   BookingController(this._bookingService);
 
-  // ===============================
-  // CONFIG
-  // ===============================
-  /// فعّل هذا المتغير أثناء التطوير فقط
   final bool useMockData = false;
-
-  // ===============================
-  // STATE
-  // ===============================
   final isLoading = false.obs;
   final errorMessage = ''.obs;
 
@@ -32,30 +19,22 @@ class BookingController extends GetxController {
 
   Timer? _statusTick;
 
-  // ===============================
-  // GETTERS
-  // ===============================
-  /// ✅ Active tab: approved/active + pending (حتى ما يضيع الحجز بانتظار الموافقة)
   List<BookingModel> get activeBookings => bookings.where((b) {
-  final s = b.effectiveStatus;
-  return s == BookingStatus.active || s == BookingStatus.pending;
-}).toList();
+    final s = b.effectiveStatus;
+    return s == BookingStatus.active || s == BookingStatus.pending;
+  }).toList();
 
-List<BookingModel> get completedBookings =>
-    bookings.where((b) => b.effectiveStatus == BookingStatus.completed).toList();
+  List<BookingModel> get completedBookings => bookings
+      .where((b) => b.effectiveStatus == BookingStatus.completed)
+      .toList();
 
-List<BookingModel> get cancelledBookings =>
-    bookings.where((b) => b.effectiveStatus == BookingStatus.cancelled).toList();
+  List<BookingModel> get cancelledBookings => bookings
+      .where((b) => b.effectiveStatus == BookingStatus.cancelled)
+      .toList();
 
-
-  // ===============================
-  // LIFECYCLE
-  // ===============================
   @override
   void onInit() {
     super.onInit();
-
-    // ✅ tick لتحديث الواجهة إذا صار الحجز Completed بسبب انتهاء الوقت
     _statusTick = Timer.periodic(const Duration(minutes: 1), (_) {
       if (bookings.isNotEmpty) bookings.refresh();
     });
@@ -69,9 +48,6 @@ List<BookingModel> get cancelledBookings =>
     super.onClose();
   }
 
-  // ===============================
-  // DATA SOURCES
-  // ===============================
   void _loadMockBookings() {
     bookings.assignAll([
       BookingModel(
@@ -82,7 +58,7 @@ List<BookingModel> get cancelledBookings =>
           end: DateTime.now().add(const Duration(days: 5)),
         ),
         totalPrice: 2850,
-        status: BookingStatus.active, // ✅ يشتغل لأن الموديل يدعم status:
+        status: BookingStatus.active,
       ),
       BookingModel(
         bookingId: 'booking-2',
@@ -117,22 +93,15 @@ List<BookingModel> get cancelledBookings =>
     ]);
   }
 
+  bool canRateApartment(String apartmentId) {
+    final id = apartmentId.toString();
 
+    return bookings.any((b) {
+      final bId = b.apartment.id.toString();
+      return bId == id && b.isCheckoutPassed;
+    });
+  }
 
-bool canRateApartment(String apartmentId) {
-  final id = apartmentId.toString();
-
-  return bookings.any((b) {
-    final bId = b.apartment.id.toString();
-    return bId == id && b.isCheckoutPassed; // ✅ فقط بعد مرور يوم الخروج
-  });
-}
-
-
-
-  // ===============================
-  // API ACTIONS
-  // ===============================
   Future<void> fetchMyBookings() async {
     try {
       isLoading.value = true;
@@ -223,7 +192,6 @@ bool canRateApartment(String apartmentId) {
 
       final index = bookings.indexWhere((b) => b.bookingId == bookingId);
       if (index != -1) {
-        // ✅ immutable: استبدل العنصر بدل تعديل داخله
         bookings[index] = bookings[index].copyWith(rawStatus: 'cancelled');
       }
 

@@ -8,8 +8,8 @@ class PendingApprovalPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // نستقبل رسالة السيرفر (اختياري)
-    final String message = (Get.arguments is String && (Get.arguments as String).isNotEmpty)
+    final String message =
+        (Get.arguments is String && (Get.arguments as String).isNotEmpty)
         ? Get.arguments as String
         : 'Your account is pending approval. Please wait for admin approval.';
 
@@ -21,7 +21,11 @@ class PendingApprovalPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.hourglass_top, size: 80, color: AppColors.primary),
+              const Icon(
+                Icons.hourglass_top,
+                size: 80,
+                color: AppColors.primary,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Pending Approval',

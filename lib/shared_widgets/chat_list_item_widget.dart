@@ -5,10 +5,7 @@ import 'package:project/data/models/chat_model.dart';
 class ChatListItem extends StatelessWidget {
   final Chat chat;
 
-  const ChatListItem({
-    super.key,
-    required this.chat,
-  });
+  const ChatListItem({super.key, required this.chat});
 
   @override
   Widget build(BuildContext context) {
@@ -16,11 +13,7 @@ class ChatListItem extends StatelessWidget {
 
     return ListTile(
       onTap: () {
-        Navigator.pushNamed(
-          context,
-          AppRouter.chatDetail,
-          arguments: chat,
-        );
+        Navigator.pushNamed(context, AppRouter.chatDetail, arguments: chat);
       },
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16.0,
@@ -32,10 +25,7 @@ class ChatListItem extends StatelessWidget {
         backgroundImage: NetworkImage(chat.imageUrl),
       ),
 
-      title: Text(
-        chat.name,
-        style: theme.textTheme.titleMedium,
-      ),
+      title: Text(chat.name, style: theme.textTheme.titleMedium),
 
       subtitle: Text(
         chat.lastMessage,

@@ -23,9 +23,7 @@ class OnboardingPageWidget extends StatelessWidget {
     final theme = Theme.of(context);
     return Stack(
       children: [
-        Positioned.fill(
-          child: Image.asset(item.image, fit: BoxFit.cover),
-        ),
+        Positioned.fill(child: Image.asset(item.image, fit: BoxFit.cover)),
         Positioned.fill(
           child: Container(color: Colors.black.withOpacity(0.45)),
         ),
@@ -38,15 +36,17 @@ class OnboardingPageWidget extends StatelessWidget {
               Text(
                 item.title,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(color: Colors.white),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 item.subtitle,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: Colors.white70),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white70,
+                ),
               ),
               const SizedBox(height: 30),
               Row(

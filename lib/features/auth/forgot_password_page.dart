@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/screens/forgot_password_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/controllers/auth_controller.dart';

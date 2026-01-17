@@ -111,9 +111,7 @@ class _BookingStatusSection extends StatelessWidget {
           child: _statusWithActions(
             label: 'بانتظار موافقة الأدمن',
             labelColor: Colors.orange.shade700,
-            actions: [
-              _cancelButton(context),
-            ],
+            actions: [_cancelButton(context)],
           ),
         );
 
@@ -121,8 +119,9 @@ class _BookingStatusSection extends StatelessWidget {
         final auth = Get.find<AuthController>();
         final ratingCtrl = Get.find<RatingController>();
         final isTenant = auth.currentUser.value?.isTenant == true;
-        final alreadyRated =
-            ratingCtrl.ratedBookingIds.contains(booking.bookingId);
+        final alreadyRated = ratingCtrl.ratedBookingIds.contains(
+          booking.bookingId,
+        );
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -168,7 +167,6 @@ class _BookingStatusSection extends StatelessWidget {
     }
   }
 
-  // ✅ Responsive row without overflow
   Widget _statusWithActions({
     required String label,
     required Color labelColor,
@@ -180,10 +178,7 @@ class _BookingStatusSection extends StatelessWidget {
         Flexible(
           child: Text(
             label,
-            style: TextStyle(
-              color: labelColor,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: labelColor, fontWeight: FontWeight.bold),
             overflow: TextOverflow.ellipsis,
           ),
         ),

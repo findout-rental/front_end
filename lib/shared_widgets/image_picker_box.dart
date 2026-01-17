@@ -35,11 +35,7 @@ class ImagePickerBox extends StatelessWidget {
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        icon,
-                        size: 32,
-                        color: theme.primaryColor,
-                      ),
+                      Icon(icon, size: 32, color: theme.primaryColor),
                       const SizedBox(height: 8),
                       Text(
                         title,

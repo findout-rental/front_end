@@ -10,14 +10,12 @@ class FilterBottomSheet extends StatefulWidget {
 }
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  // Mock data
   final Map<String, List<String>> _governorateCityMap = {
     'الرياض': ['الرياض', 'الدرعية', 'الخرج'],
     'مكة المكرمة': ['مكة', 'جدة', 'الطائف'],
     'الشرقية': ['الدمام', 'الخبر', 'الجبيل'],
   };
 
-  // state
   PriceType _priceType = PriceType.nightly;
   RangeValues? _priceRange;
 
@@ -28,7 +26,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   String? _selectedCity;
   List<String> _cities = [];
 
-  // ✅ amenities (لازم القيم تطابق اللي مخزنة بالباك داخل JSON)
   final Map<String, String> _amenities = const {
     'balcony': 'شرفة',
     'wifi': 'واي فاي',
@@ -37,7 +34,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   };
   final Set<String> _selectedAmenities = {};
 
-  // sorting supported by backend: price_low, price_high, rating, newest, oldest
   String _sortBy = 'newest';
 
   void _updateCities(String newGovernorate) {
@@ -62,53 +58,47 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     });
   }
 
-Map<String, dynamic> _collectFilters() {
-  final filters = <String, dynamic>{};
+  Map<String, dynamic> _collectFilters() {
+    final filters = <String, dynamic>{};
 
-  // ✅ الموقع
-  if (_selectedGovernorate != null && _selectedGovernorate!.trim().isNotEmpty) {
-    filters['governorate'] = _selectedGovernorate!.trim();
-  }
-  if (_selectedCity != null && _selectedCity!.trim().isNotEmpty) {
-    filters['city'] = _selectedCity!.trim();
-  }
-
-  // ✅ السعر حسب النوع المختار (ليلي/شهري)
-  if (_priceRange != null) {
-    final min = _priceRange!.start.round();
-    final max = _priceRange!.end.round();
-
-    if (_priceType == PriceType.nightly) {
-      filters['min_nightly_price'] = min;
-      filters['max_nightly_price'] = max;
-    } else {
-      filters['min_monthly_price'] = min;
-      filters['max_monthly_price'] = max;
+    if (_selectedGovernorate != null &&
+        _selectedGovernorate!.trim().isNotEmpty) {
+      filters['governorate'] = _selectedGovernorate!.trim();
     }
+    if (_selectedCity != null && _selectedCity!.trim().isNotEmpty) {
+      filters['city'] = _selectedCity!.trim();
+    }
+
+    if (_priceRange != null) {
+      final min = _priceRange!.start.round();
+      final max = _priceRange!.end.round();
+
+      if (_priceType == PriceType.nightly) {
+        filters['min_nightly_price'] = min;
+        filters['max_nightly_price'] = max;
+      } else {
+        filters['min_monthly_price'] = min;
+        filters['max_monthly_price'] = max;
+      }
+    }
+
+    if (_bedrooms != null && _bedrooms! > 0) {
+      filters['bedrooms'] = _bedrooms;
+    }
+    if (_bathrooms != null && _bathrooms! > 0) {
+      filters['bathrooms'] = _bathrooms;
+    }
+
+    if (_selectedAmenities.isNotEmpty) {
+      filters['amenities[]'] = _selectedAmenities.toList();
+    }
+
+    if (_sortBy.trim().isNotEmpty) {
+      filters['sort_by'] = _sortBy.trim();
+    }
+
+    return filters;
   }
-
-  // ✅ غرف/حمامات
-  if (_bedrooms != null && _bedrooms! > 0) {
-    filters['bedrooms'] = _bedrooms;
-  }
-  if (_bathrooms != null && _bathrooms! > 0) {
-    filters['bathrooms'] = _bathrooms;
-  }
-
-  // ✅ amenities[] (مثل اللي ظهر معك باللوغ تبع owner)
-  if (_selectedAmenities.isNotEmpty) {
-    filters['amenities[]'] = _selectedAmenities.toList();
-  }
-
-  // ✅ sort
-  if (_sortBy.trim().isNotEmpty) {
-    filters['sort_by'] = _sortBy.trim();
-  }
-
-  return filters;
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +129,6 @@ Map<String, dynamic> _collectFilters() {
             const SizedBox(height: 20),
             Text('فلترة', style: theme.textTheme.titleLarge),
 
-            // ---------------- Price type ----------------
             const SizedBox(height: 16),
             Text('نوع السعر', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -166,7 +155,6 @@ Map<String, dynamic> _collectFilters() {
               ],
             ),
 
-            // ---------------- Price range ----------------
             const SizedBox(height: 8),
             Text('السعر', style: theme.textTheme.titleMedium),
             const SizedBox(height: 6),
@@ -192,7 +180,9 @@ Map<String, dynamic> _collectFilters() {
             Text('الغرف', style: theme.textTheme.titleMedium),
             Row(
               children: [
-                Expanded(child: Text('غرف النوم', style: theme.textTheme.bodyMedium)),
+                Expanded(
+                  child: Text('غرف النوم', style: theme.textTheme.bodyMedium),
+                ),
                 _stepper(
                   value: _bedrooms,
                   onUpdate: (v) => setState(() => _bedrooms = v),
@@ -201,7 +191,9 @@ Map<String, dynamic> _collectFilters() {
             ),
             Row(
               children: [
-                Expanded(child: Text('الحمّامات', style: theme.textTheme.bodyMedium)),
+                Expanded(
+                  child: Text('الحمّامات', style: theme.textTheme.bodyMedium),
+                ),
                 _stepper(
                   value: _bathrooms,
                   onUpdate: (v) => setState(() => _bathrooms = v),
@@ -229,7 +221,10 @@ Map<String, dynamic> _collectFilters() {
                 initialValue: _selectedCity,
                 hint: const Text('اختر المدينة'),
                 items: _cities
-                    .map((city) => DropdownMenuItem(value: city, child: Text(city)))
+                    .map(
+                      (city) =>
+                          DropdownMenuItem(value: city, child: Text(city)),
+                    )
                     .toList(),
                 onChanged: (value) => setState(() => _selectedCity = value),
                 decoration: const InputDecoration(labelText: 'المدينة'),
@@ -268,9 +263,18 @@ Map<String, dynamic> _collectFilters() {
               items: const [
                 DropdownMenuItem(value: 'newest', child: Text('الأحدث')),
                 DropdownMenuItem(value: 'oldest', child: Text('الأقدم')),
-                DropdownMenuItem(value: 'price_low', child: Text('السعر: من الأقل')),
-                DropdownMenuItem(value: 'price_high', child: Text('السعر: من الأعلى')),
-                DropdownMenuItem(value: 'rating', child: Text('الأعلى تقييمًا')),
+                DropdownMenuItem(
+                  value: 'price_low',
+                  child: Text('السعر: من الأقل'),
+                ),
+                DropdownMenuItem(
+                  value: 'price_high',
+                  child: Text('السعر: من الأعلى'),
+                ),
+                DropdownMenuItem(
+                  value: 'rating',
+                  child: Text('الأعلى تقييمًا'),
+                ),
               ],
               onChanged: (v) => setState(() => _sortBy = v ?? 'newest'),
               decoration: const InputDecoration(labelText: 'Sort by'),
@@ -314,7 +318,9 @@ Map<String, dynamic> _collectFilters() {
           icon: const Icon(Icons.clear),
         ),
         IconButton(
-          onPressed: (value == null || current <= 1) ? null : () => onUpdate(current - 1),
+          onPressed: (value == null || current <= 1)
+              ? null
+              : () => onUpdate(current - 1),
           icon: const Icon(Icons.remove_circle_outline),
         ),
         SizedBox(

@@ -13,11 +13,7 @@ class ApiException implements Exception {
   final ApiErrorType type;
   final int? statusCode;
 
-  ApiException({
-    required this.message,
-    required this.type,
-    this.statusCode,
-  });
+  ApiException({required this.message, required this.type, this.statusCode});
 
   @override
   String toString() => message;

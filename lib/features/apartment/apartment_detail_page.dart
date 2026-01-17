@@ -11,7 +11,6 @@ import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/chat_model.dart';
 import 'package:project/shared_widgets/primary_button.dart';
 
-
 class ApartmentDetailPage extends StatefulWidget {
   final Apartment apartment;
   const ApartmentDetailPage({super.key, required this.apartment});
@@ -24,22 +23,20 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   int _currentImageIndex = 0;
   late double _userRating;
   late bool _isAvailable;
-  
 
   bool _ratingSubmitted = false;
 
-void _submitRating() {
-  if (_userRating <= 0) return;
+  void _submitRating() {
+    if (_userRating <= 0) return;
 
-  setState(() => _ratingSubmitted = true);
+    setState(() => _ratingSubmitted = true);
 
-  Get.snackbar(
-    'تم',
-    'تم حفظ تقييمك (واجهة فقط حالياً)',
-    snackPosition: SnackPosition.BOTTOM,
-  );
-}
-
+    Get.snackbar(
+      'تم',
+      'تم حفظ تقييمك (واجهة فقط حالياً)',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
 
   @override
   void initState() {
@@ -82,9 +79,6 @@ void _submitRating() {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Image Gallery
-  // ---------------------------------------------------------------------------
   Widget _buildImageGallery() {
     final images = widget.apartment.images;
 
@@ -149,14 +143,10 @@ void _submitRating() {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // ✅ Smart image (Base64 / /storage / http)
-  // ---------------------------------------------------------------------------
   Widget _buildSmartImage(String raw, {bool darkOverlay = false}) {
     final s = raw.trim();
     if (s.isEmpty) return _brokenImage();
 
-    // 1) ✅ Base64 (حتى لو ضمن URL أو /storage//9j/..)
     final Uint8List? bytes = PhotoHelper.decodeFromAnything(s);
     if (bytes != null) {
       return Image.memory(
@@ -169,7 +159,6 @@ void _submitRating() {
       );
     }
 
-    // 2) ✅ URL كامل
     if (s.startsWith('http://') || s.startsWith('https://')) {
       return Image.network(
         s,
@@ -185,7 +174,6 @@ void _submitRating() {
       );
     }
 
-    // 3) ✅ /storage/... أو storage/... (رابط نسبي)
     final url = _toAbsoluteUrl(s);
     if (url == null) return _brokenImage();
 
@@ -201,19 +189,13 @@ void _submitRating() {
     );
   }
 
-  /// يحول المسار النسبي إلى رابط كامل
-  /// - /storage/xxx  -> http://ip:8000/storage/xxx
-  /// - storage/xxx   -> http://ip:8000/storage/xxx
-  /// ملاحظة: إذا كان input فيه "/storage//9j/..." هذا Base64 وكان لازم ينمسك بالأعلى
   String? _toAbsoluteUrl(String raw) {
     final host = ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
 
     var s = raw.trim();
 
-    // شيل أي تكرار "/storage//" لو موجود
     s = s.replaceFirst('/storage//', '/storage/');
 
-    // إذا صار فيه base64 بالغلط هون، رجّع null (كان لازم ينمسك فوق)
     if (s.startsWith('/storage//9j/') || s.startsWith('/9j/')) return null;
 
     if (s.startsWith('/')) return '$host$s';
@@ -229,9 +211,6 @@ void _submitRating() {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Header
-  // ---------------------------------------------------------------------------
   Widget _buildHeader() {
     final theme = Theme.of(context);
     return Column(
@@ -304,9 +283,6 @@ void _submitRating() {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Sections
-  // ---------------------------------------------------------------------------
   Widget _buildDescription() => _section(
     'عن هذه الشقة',
     'هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة...',
@@ -332,20 +308,21 @@ void _submitRating() {
     );
   }
 
-    Widget _buildRatingSection() {
-    // controllers
+  Widget _buildRatingSection() {
     final AuthController auth = Get.find<AuthController>();
     final BookingController bookingCtrl = Get.find<BookingController>();
 
     return Obx(() {
       final isTenant = auth.currentUser.value?.isTenant == true;
-      final canRate = isTenant && bookingCtrl.canRateApartment(widget.apartment.id);
+      final canRate =
+          isTenant && bookingCtrl.canRateApartment(widget.apartment.id);
 
       String hint;
       if (!isTenant) {
         hint = 'التقييم متاح للمستأجر فقط.';
       } else if (!canRate) {
-        hint = 'يمكنك التقييم فقط بعد انتهاء مدة الحجز (بعد تاريخ الخروج) للحجز الموافق عليه.';
+        hint =
+            'يمكنك التقييم فقط بعد انتهاء مدة الحجز (بعد تاريخ الخروج) للحجز الموافق عليه.';
       } else {
         hint = 'قيّم تجربتك بعد انتهاء الإقامة.';
       }
@@ -358,8 +335,8 @@ void _submitRating() {
           Text(
             hint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: canRate ? Colors.green.shade700 : Colors.grey.shade600,
-                ),
+              color: canRate ? Colors.green.shade700 : Colors.grey.shade600,
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -386,17 +363,17 @@ void _submitRating() {
 
           const SizedBox(height: 16),
 
-          // زر الإرسال يظهر فقط إذا مسموح بالتقييم
           if (canRate)
             PrimaryButton(
               text: _ratingSubmitted ? 'تم الإرسال' : 'إرسال التقييم',
-              onPressed: (_ratingSubmitted || _userRating <= 0) ? null : _submitRating,
+              onPressed: (_ratingSubmitted || _userRating <= 0)
+                  ? null
+                  : _submitRating,
             ),
         ],
       );
     });
   }
-
 
   Widget _buildOwnerInfo() {
     final theme = Theme.of(context);
@@ -452,9 +429,6 @@ void _submitRating() {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Bottom Bar
-  // ---------------------------------------------------------------------------
   Widget _buildBottomBar() {
     final theme = Theme.of(context);
 
@@ -466,12 +440,11 @@ void _submitRating() {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
           child: SizedBox(
-            height: 60, // ✅ أطول شوي (بدون Overflow)
+            height: 60,
             child: Directionality(
-              textDirection: TextDirection.ltr, // ✅ السعر يسار والزر يمين
+              textDirection: TextDirection.ltr,
               child: Row(
                 children: [
-                  // ✅ Price (يسار) - بدون overflow حتى لو الخط كبير
                   Expanded(
                     flex: 3,
                     child: FittedBox(
@@ -499,9 +472,6 @@ void _submitRating() {
                     ),
                   ),
 
-                  //const SizedBox(width: 8),
-
-                  // ✅ Button (يمين)
                   Expanded(
                     flex: 7,
                     child: SizedBox(
@@ -526,9 +496,6 @@ void _submitRating() {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
   Future<void> _navigateToBooking() async {
     final result =
         await Navigator.pushNamed(

@@ -1,4 +1,3 @@
-// lib/services/websocket_service.dart
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -8,7 +7,6 @@ class WebsocketService {
   final AuthStorage _authStorage = Get.find<AuthStorage>();
   IO.Socket? _socket;
 
-  /// الاتصال بالسيرفر
   void connect() {
     final token = _authStorage.token;
     if (token == null) {
@@ -22,7 +20,7 @@ class WebsocketService {
     }
 
     _socket = IO.io(
-      'http://192.168.1.105:8000', // عدلها حسب السيرفر
+      'http://192.168.1.105:8000',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
@@ -45,11 +43,7 @@ class WebsocketService {
     });
   }
 
-  /// الاستماع لحدث
-  void listen(
-    String eventName, // تم تعديل التوقيع ليكون أبسط
-    void Function(String data) onData,
-  ) {
+  void listen(String eventName, void Function(String data) onData) {
     if (_socket == null) {
       print('❌ WebSocket not connected');
       return;
@@ -67,12 +61,10 @@ class WebsocketService {
     print('👂 Listening to event: $eventName');
   }
 
-  /// إرسال حدث (اختياري)
   void emit(String eventName, dynamic data) {
     _socket?.emit(eventName, data);
   }
 
-  /// قطع الاتصال
   void disconnect() {
     _socket?.disconnect();
     _socket?.dispose();

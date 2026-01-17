@@ -9,41 +9,32 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ إنشاء المراقب مرة واحدة عند فتح الصفحة
-    final NotificationController controller =
-    Get.put(NotificationController());
+    final NotificationController controller = Get.put(NotificationController());
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('الإشعارات'),
         actions: [
-          // زر تعليم الكل كمقروء
           Obx(
-                () => controller.notifications.isEmpty
+            () => controller.notifications.isEmpty
                 ? const SizedBox.shrink()
                 : TextButton(
-              onPressed: controller.markAllAsRead,
-              child: const Text('Mark all as read'),
-            ),
+                    onPressed: controller.markAllAsRead,
+                    child: const Text('Mark all as read'),
+                  ),
           ),
         ],
       ),
       body: Obx(() {
-        // حالة التحميل الأولى
-        if (controller.isLoading.value &&
-            controller.notifications.isEmpty) {
+        if (controller.isLoading.value && controller.notifications.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // لا يوجد إشعارات
         if (controller.notifications.isEmpty) {
           return const EmptyNotificationsView();
         }
 
-        // عرض الإشعارات
-        return NotificationsListView(
-          notifications: controller.notifications,
-        );
+        return NotificationsListView(notifications: controller.notifications);
       }),
     );
   }

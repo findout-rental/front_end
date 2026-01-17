@@ -1,7 +1,5 @@
-// profile_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:project/controllers/auth_controller.dart';
 import 'package:project/controllers/language_controller.dart';
 import 'package:project/controllers/theme_controller.dart';
@@ -19,7 +17,6 @@ class ProfilePage extends StatelessWidget {
     final ThemeController themeController = Get.find<ThemeController>();
     final LanguageController langController = Get.find<LanguageController>();
 
-    // ✅ بدون Obx: التغيير بالـ Theme/Locale يعمل rebuild تلقائياً
     final bool isLightMode = !Get.isDarkMode;
     final bool isEnglish = (Get.locale?.languageCode ?? 'en') == 'en';
 
@@ -28,9 +25,6 @@ class ProfilePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20.0),
         children: [
-          // -------------------------------------------------------------------
-          // 🧑 User Info (هذا فقط يلي لازم Obx لأنه يعتمد Rx)
-          // -------------------------------------------------------------------
           Obx(() {
             final user = authController.currentUser.value;
 
@@ -80,9 +74,6 @@ class ProfilePage extends StatelessWidget {
 
           const Divider(height: 50),
 
-          // -------------------------------------------------------------------
-          // 🌙 Theme Toggle (بدون Obx)
-          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.brightness_6_outlined,
@@ -93,14 +84,11 @@ class ProfilePage extends StatelessWidget {
                 optionOneText: 'Light'.tr,
                 optionTwoText: 'Night'.tr,
                 value: isLightMode,
-                onChanged: themeController.toggleTheme, // ✅ الصحيح
+                onChanged: themeController.toggleTheme,
               ),
             ),
           ),
 
-          // -------------------------------------------------------------------
-          // 🌐 Language Toggle (بدون Obx)
-          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.language_outlined,
@@ -116,9 +104,6 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
 
-          // -------------------------------------------------------------------
-          // ✏️ Edit Profile
-          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.edit_outlined,
@@ -126,9 +111,6 @@ class ProfilePage extends StatelessWidget {
             onTap: () => Get.toNamed(AppRouter.editProfile),
           ),
 
-          // -------------------------------------------------------------------
-          // ⚙️ Settings
-          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.settings_outlined,
@@ -138,9 +120,6 @@ class ProfilePage extends StatelessWidget {
 
           const Divider(height: 40),
 
-          // -------------------------------------------------------------------
-          // 🚪 Logout
-          // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
             icon: Icons.logout,
@@ -165,9 +144,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Profile option builder
-  // ---------------------------------------------------------------------------
   Widget _buildProfileOption({
     required BuildContext context,
     required IconData icon,

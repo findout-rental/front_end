@@ -14,10 +14,6 @@ bool isYesterday(DateTime date) {
       date.day == yesterday.day;
 }
 
-/// Formats date in a user-friendly way:
-/// - 5m ago
-/// - 2h ago
-/// - 12 Mar, 2024
 String formatDate(DateTime date) {
   final now = DateTime.now();
   final difference = now.difference(date);

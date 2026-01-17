@@ -1,5 +1,3 @@
-// lib/features/profile/presentation/screens/edit_profile_page.dart
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -25,7 +23,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    // ملء الحقول بالبيانات الحالية للمستخدم
     final user = authController.currentUser.value;
     final nameParts = user?.fullName.split(' ') ?? ['first'.tr, 'last'.tr];
     _firstNameController = TextEditingController(text: nameParts.first);

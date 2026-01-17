@@ -1,5 +1,3 @@
-// lib/controllers/notification_controller.dart
-
 import 'package:get/get.dart';
 import 'package:project/data/models/notification_model.dart';
 import 'package:project/services/notification_service.dart';
@@ -34,13 +32,8 @@ class NotificationController extends GetxController {
   Future<void> markAllAsRead() async {
     try {
       await _service.markAllAsRead();
-      // تحديث الحالة محليًا لتجربة مستخدم فورية
-      for (var notification in notifications) {
-        // notification.isRead = true; // ⚠️ يتطلب جعل isRead غير final
-      }
+      for (var notification in notifications) {}
       notifications.refresh();
-      // أو إعادة الجلب من الخادم
-      // await fetchNotifications();
     } catch (e) {
       print("Mark as read error: $e");
     }

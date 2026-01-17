@@ -3,10 +3,6 @@ import 'app_colors.dart';
 
 class AppTheme {
   AppTheme._();
-
-  // --------------------
-  // Shared styles
-  // --------------------
   static final _elevatedButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: AppColors.primary,
     foregroundColor: AppColors.white,
@@ -20,19 +16,14 @@ class AppTheme {
       fontFamily: 'Amiri',
     ),
   );
-
   static final _cardShape = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(15),
   );
-
   static final _inputDecorationBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(15.0),
     borderSide: BorderSide.none,
   );
 
-  // --------------------
-  // Light Theme
-  // --------------------
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     fontFamily: 'Amiri',
@@ -42,13 +33,12 @@ class AppTheme {
 
     colorScheme: ColorScheme.light(
       primary: AppColors.primary,
-      secondary: AppColors.primary, // from second project
+      secondary: AppColors.primary,
       surface: AppColors.light.surface,
       onPrimary: AppColors.white,
       onSurface: AppColors.light.text,
       error: Colors.red.shade700,
     ),
-
     textTheme: TextTheme(
       titleLarge: TextStyle(
         color: AppColors.light.text,
@@ -60,35 +50,25 @@ class AppTheme {
         fontWeight: FontWeight.bold,
         fontSize: 16,
       ),
-      bodyMedium: TextStyle(
-        color: AppColors.light.text,
-        fontSize: 14,
-      ),
-      bodySmall: TextStyle(
-        color: AppColors.light.textSecondary,
-        fontSize: 12,
-      ),
+      bodyMedium: TextStyle(color: AppColors.light.text, fontSize: 14),
+      bodySmall: TextStyle(color: AppColors.light.textSecondary, fontSize: 12),
       labelLarge: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         fontFamily: 'Amiri',
       ),
     ),
-
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.light.surface, // compatible with both
+      backgroundColor: AppColors.light.surface,
       foregroundColor: AppColors.light.text,
       elevation: 0.5,
     ),
-
     bottomAppBarTheme: BottomAppBarThemeData(
       color: AppColors.light.surface,
       surfaceTintColor: AppColors.light.surface,
       elevation: 2.0,
     ),
-
     elevatedButtonTheme: ElevatedButtonThemeData(style: _elevatedButtonStyle),
-
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.light.surface,
@@ -101,34 +81,21 @@ class AppTheme {
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
     ),
-
-    dividerTheme: DividerThemeData(
-      color: Colors.grey.shade300,
-      thickness: 0.8,
-    ),
-
+    dividerTheme: DividerThemeData(color: Colors.grey.shade300, thickness: 0.8),
     cardTheme: CardThemeData(
       elevation: 2,
       color: AppColors.light.surface,
       surfaceTintColor: AppColors.light.surface,
       shape: _cardShape,
     ),
-
-    listTileTheme: const ListTileThemeData(
-      iconColor: AppColors.primary,
-    ),
+    listTileTheme: const ListTileThemeData(iconColor: AppColors.primary),
   );
-
-  // --------------------
-  // Dark Theme
-  // --------------------
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     fontFamily: 'Amiri',
     brightness: Brightness.dark,
     primaryColor: AppColors.primary,
     scaffoldBackgroundColor: AppColors.dark.background,
-
     colorScheme: ColorScheme.dark(
       primary: AppColors.primary,
       secondary: AppColors.primary,
@@ -137,7 +104,6 @@ class AppTheme {
       onSurface: AppColors.dark.text,
       error: Colors.redAccent.shade100,
     ),
-
     textTheme: TextTheme(
       titleLarge: TextStyle(
         color: AppColors.dark.text,
@@ -153,31 +119,24 @@ class AppTheme {
         color: AppColors.dark.text.withOpacity(0.87),
         fontSize: 14,
       ),
-      bodySmall: TextStyle(
-        color: AppColors.dark.textSecondary,
-        fontSize: 12,
-      ),
+      bodySmall: TextStyle(color: AppColors.dark.textSecondary, fontSize: 12),
       labelLarge: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         fontFamily: 'Amiri',
       ),
     ),
-
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.dark.surface,
       foregroundColor: AppColors.dark.text,
       elevation: 0.5,
     ),
-
     bottomAppBarTheme: BottomAppBarThemeData(
       color: AppColors.dark.surface,
       surfaceTintColor: AppColors.dark.surface,
       elevation: 2.0,
     ),
-
     elevatedButtonTheme: ElevatedButtonThemeData(style: _elevatedButtonStyle),
-
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.dark.surface,
@@ -190,21 +149,13 @@ class AppTheme {
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
     ),
-
-    dividerTheme: const DividerThemeData(
-      color: Colors.white24,
-      thickness: 0.8,
-    ),
-
+    dividerTheme: const DividerThemeData(color: Colors.white24, thickness: 0.8),
     cardTheme: CardThemeData(
       elevation: 1,
       color: AppColors.dark.surface,
       surfaceTintColor: AppColors.dark.surface,
       shape: _cardShape,
     ),
-
-    listTileTheme: const ListTileThemeData(
-      iconColor: AppColors.primary,
-    ),
+    listTileTheme: const ListTileThemeData(iconColor: AppColors.primary),
   );
 }

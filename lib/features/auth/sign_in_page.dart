@@ -14,7 +14,6 @@ class SignInPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Auth controller (GetX)
     final AuthController controller = Get.find<AuthController>();
 
     return Scaffold(
@@ -22,10 +21,11 @@ class SignInPage extends StatelessWidget {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: SizedBox(
-            height: MediaQuery.of(context).size.height -
+            height:
+                MediaQuery.of(context).size.height -
                 MediaQuery.of(context).padding.top,
             child: Obx(
-                  () => Column(
+              () => Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -44,7 +44,6 @@ class SignInPage extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // Phone
                   CustomTextField(
                     controller: controller.phoneController,
                     hint: 'phone_number'.tr,
@@ -54,7 +53,6 @@ class SignInPage extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // Password
                   PasswordField(
                     controller: controller.passwordController,
                     hint: 'password'.tr,
@@ -63,8 +61,7 @@ class SignInPage extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () =>
-                          Get.toNamed(AppRouter.forgotPassword),
+                      onPressed: () => Get.toNamed(AppRouter.forgotPassword),
                       child: Text(
                         'forgot_password'.tr,
                         style: TextStyle(color: theme.primaryColor),
@@ -72,22 +69,17 @@ class SignInPage extends StatelessWidget {
                     ),
                   ),
 
-                  // Error message
                   if (controller.errorMessage.value.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
                       controller.errorMessage.value,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                      ),
+                      style: const TextStyle(color: Colors.red, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                   ],
 
                   const SizedBox(height: 16),
 
-                  // Login button
                   PrimaryButton(
                     text: controller.isLoading.value ? '...' : 'sign_in'.tr,
                     onPressed: controller.isLoading.value
@@ -97,7 +89,6 @@ class SignInPage extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // Sign up
                   RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
@@ -111,8 +102,7 @@ class SignInPage extends StatelessWidget {
                             color: theme.primaryColor,
                           ),
                           recognizer: TapGestureRecognizer()
-                            ..onTap =
-                                () => Get.toNamed(AppRouter.signUp),
+                            ..onTap = () => Get.toNamed(AppRouter.signUp),
                         ),
                       ],
                     ),

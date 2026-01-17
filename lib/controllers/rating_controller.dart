@@ -1,15 +1,11 @@
 import 'package:dio/dio.dart' as dio;
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/services/rating_service.dart';
 
 class RatingController extends GetxController {
   final RatingService _service;
   RatingController(this._service);
-
   final isSubmitting = false.obs;
-
-  /// حتى ما يخليه يقيّم نفس الحجز مرتين (UI-side)
   final RxSet<String> ratedBookingIds = <String>{}.obs;
 
   Future<bool> submitRating({
@@ -51,7 +47,11 @@ class RatingController extends GetxController {
       Get.snackbar('خطأ', msg, snackPosition: SnackPosition.BOTTOM);
       return false;
     } catch (_) {
-      Get.snackbar('خطأ', 'حدث خطأ غير متوقع', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'خطأ',
+        'حدث خطأ غير متوقع',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return false;
     } finally {
       isSubmitting.value = false;

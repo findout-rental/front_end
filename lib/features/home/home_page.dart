@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:project/controllers/apartment_controller.dart';
 import 'package:project/controllers/auth_controller.dart';
 import 'package:project/controllers/home_controller.dart';
@@ -40,7 +39,6 @@ class _HomePageState extends State<HomePage> {
       const ProfilePage(),
     ];
 
-    // Safe extra fetch (لن يضر لأن controller يمنع الطلب قبل login)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (apartmentController.allApartments.isEmpty &&
           !apartmentController.isLoading.value) {
@@ -61,7 +59,6 @@ class _HomePageState extends State<HomePage> {
         );
       }),
 
-      // ✅ FAB يظهر فقط للـ Owner
       floatingActionButton: Obx(() {
         final isOwner = authController.currentUser.value?.isOwner == true;
         if (!isOwner) return const SizedBox.shrink();
@@ -75,117 +72,110 @@ class _HomePageState extends State<HomePage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       bottomNavigationBar: SafeArea(
-  top: false,
-  child: BottomAppBar(
-    shape: const CircularNotchedRectangle(),
-    notchMargin: 8,
-    child: Obx(() {
-      final current = homeController.selectedIndex.value;
-      final isOwner = authController.currentUser.value?.isOwner == true;
+        top: false,
+        child: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8,
+          child: Obx(() {
+            final current = homeController.selectedIndex.value;
+            final isOwner = authController.currentUser.value?.isOwner == true;
 
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          // ✅ gap responsive لمكان الـ FAB (بين 64 و 96 حسب عرض الجهاز)
-          final double gap = isOwner
-              ? (constraints.maxWidth * 0.18).clamp(64.0, 96.0).toDouble()
-              : 0.0;
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final double gap = isOwner
+                    ? (constraints.maxWidth * 0.18).clamp(64.0, 96.0).toDouble()
+                    : 0.0;
 
-          return Row(
-            children: [
-              Expanded(
-                child: _buildNavItem(
-                  theme,
-                  Icons.home_filled,
-                  'الرئيسية',
-                  0,
-                  current == 0,
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  theme,
-                  Icons.favorite,
-                  'المفضلة',
-                  1,
-                  current == 1,
-                ),
-              ),
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildNavItem(
+                        theme,
+                        Icons.home_filled,
+                        'الرئيسية',
+                        0,
+                        current == 0,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildNavItem(
+                        theme,
+                        Icons.favorite,
+                        'المفضلة',
+                        1,
+                        current == 1,
+                      ),
+                    ),
 
-              if (isOwner) SizedBox(width: gap),
+                    if (isOwner) SizedBox(width: gap),
 
-              Expanded(
-                child: _buildNavItem(
-                  theme,
-                  Icons.apartment,
-                  'شققي',
-                  2,
-                  current == 2,
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  theme,
-                  Icons.person,
-                  'حسابي',
-                  3,
-                  current == 3,
-                ),
-              ),
-            ],
-          );
-        },
-      );
-    }),
-  ),
-),
-
-
+                    Expanded(
+                      child: _buildNavItem(
+                        theme,
+                        Icons.apartment,
+                        'شققي',
+                        2,
+                        current == 2,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildNavItem(
+                        theme,
+                        Icons.person,
+                        'حسابي',
+                        3,
+                        current == 3,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          }),
+        ),
+      ),
     );
   }
 
   Widget _buildNavItem(
-  ThemeData theme,
-  IconData icon,
-  String label,
-  int index,
-  bool isSelected,
-) {
-  return InkWell(
-    onTap: () => homeController.onTabTapped(index),
-    borderRadius: BorderRadius.circular(24),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6), // ✅ أقل لتجنب overflow
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? theme.primaryColor : Colors.grey.shade500,
-          ),
-          const SizedBox(height: 2),
-          FittedBox( // ✅ يجعل النص responsive وما يعمل overflow
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: isSelected ? theme.primaryColor : Colors.grey.shade600,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    ThemeData theme,
+    IconData icon,
+    String label,
+    int index,
+    bool isSelected,
+  ) {
+    return InkWell(
+      onTap: () => homeController.onTabTapped(index),
+      borderRadius: BorderRadius.circular(24),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? theme.primaryColor : Colors.grey.shade500,
+            ),
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isSelected ? theme.primaryColor : Colors.grey.shade600,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-}
-
-// -----------------------------------------------------------------------------
-// Home tab
-// -----------------------------------------------------------------------------
 class _HomeContent extends StatelessWidget {
   final ApartmentController controller;
   const _HomeContent({required this.controller});
@@ -216,28 +206,28 @@ class _HomeContent extends StatelessWidget {
                   child: CustomTextField(
                     hint: 'search_hint'.tr,
                     icon: Icons.search,
-                    onChanged: controller.searchApartments, // ✅ تفعيل البحث
+                    onChanged: controller.searchApartments,
                   ),
                 ),
                 const SizedBox(width: 12),
                 GestureDetector(
-  onLongPress: controller.clearFilters, // ✅ ضغط مطوّل يمسح الفلاتر
-  child: IconButton(
-    icon: const Icon(Icons.filter_list),
-    onPressed: () async {
-      final filters = await showModalBottomSheet<Map<String, dynamic>>(
-        context: context,
-        isScrollControlled: true,
-        builder: (_) => const FilterBottomSheet(),
-      );
+                  onLongPress: controller.clearFilters,
+                  child: IconButton(
+                    icon: const Icon(Icons.filter_list),
+                    onPressed: () async {
+                      final filters =
+                          await showModalBottomSheet<Map<String, dynamic>>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => const FilterBottomSheet(),
+                          );
 
-      if (filters != null) {
-        controller.applyFilters(filters); // ✅ بدل fetchApartments
-      }
-    },
-  ),
-),
-
+                      if (filters != null) {
+                        controller.applyFilters(filters);
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -258,8 +248,9 @@ class _HomeContent extends StatelessWidget {
                   final apartment = controller.filteredApartments[index];
                   return ApartmentListItemWidget(
                     apartment: apartment,
-                    onFavoriteToggle: () => controller
-                        .toggleFavoriteStatus(apartment.id.toString()),
+                    onFavoriteToggle: () => controller.toggleFavoriteStatus(
+                      apartment.id.toString(),
+                    ),
                   );
                 },
               );
@@ -271,9 +262,6 @@ class _HomeContent extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Favorites tab
-// -----------------------------------------------------------------------------
 class _FavoritesContent extends StatelessWidget {
   final ApartmentController controller;
   const _FavoritesContent({required this.controller});

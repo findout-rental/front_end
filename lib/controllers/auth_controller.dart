@@ -10,10 +10,6 @@ import 'package:project/features/auth/reset_password_page.dart';
 import 'package:project/services/auth_service.dart';
 
 class AuthController extends GetxController {
-  // ===============================
-  // DEPENDENCIES (Injected)
-  // ===============================
-
   String? debugOtp;
   String? _verifiedOtpCode;
 
@@ -22,9 +18,6 @@ class AuthController extends GetxController {
 
   AuthController(this._authService, this._authStorage);
 
-  // ===============================
-  // TEXT CONTROLLERS
-  // ===============================
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final phoneController = TextEditingController();
@@ -32,18 +25,12 @@ class AuthController extends GetxController {
   final confirmPasswordController = TextEditingController();
   final dobController = TextEditingController();
 
-  // ===============================
-  // STATE
-  // ===============================
   final isLoading = false.obs;
   final errorMessage = ''.obs;
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
 
   bool get isLoggedIn => _authStorage.token != null;
 
-  // ===============================
-  // AUTH ACTIONS
-  // ===============================
   Future<void> login() async {
     isLoading.value = true;
     errorMessage.value = '';
@@ -89,20 +76,20 @@ class AuthController extends GetxController {
     errorMessage.value = '';
 
     try {
-      // فقط إرسال OTP
       await _authService.sendOtp(mobileNumber: phoneController.text.trim());
-
-      // await _authService.register(
-      //   firstName: firstNameController.text.trim(),
-      //   lastName: lastNameController.text.trim(),
-      //   mobileNumber: phoneController.text.trim(),
-      //   password: passwordController.text,
-      //   dateOfBirth: dobController.text,
-      //   role: isTenant ? 'tenant' : 'owner',
-      //   personalPhoto: personalImage,
-      //   idPhoto: idImage,
-      //   otpCode: '111111',
-      // );
+      /*
+      await _authService.register(
+        firstName: firstNameController.text.trim(),
+        lastName: lastNameController.text.trim(),
+        mobileNumber: phoneController.text.trim(),
+        password: passwordController.text,
+        dateOfBirth: dobController.text,
+        role: isTenant ? 'tenant' : 'owner',
+        personalPhoto: personalImage,
+        idPhoto: idImage,
+        otpCode: '111111',
+      );
+      */
       Get.toNamed(
         AppRouter.otp,
         arguments: {
@@ -195,9 +182,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // ===============================
-  // PROFILE
-  // ===============================
   Future<void> updateUserProfile({
     required String firstName,
     required String lastName,
@@ -242,9 +226,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // ===============================
-  // HELPERS
-  // ===============================
   void _handleAuthError(Object e) {
     debugPrint('AUTH ERROR TYPE => ${e.runtimeType}');
     debugPrint('AUTH ERROR => $e');
@@ -258,9 +239,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // ===============================
-  // LIFECYCLE
-  // ===============================
   @override
   void onInit() {
     super.onInit();

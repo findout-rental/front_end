@@ -1,4 +1,3 @@
-// lib/controllers/chat_controller.dart
 /*
 import 'dart:convert';
 import 'package:get/get.dart';
@@ -9,10 +8,7 @@ import 'package:project/services/websocket_service.dart';
 import 'package:project/controllers/auth_controller.dart';
 
 class ChatController extends GetxController {
-  // // --- DEPENDENCIES ---
-  // final ChatService _chatService = Get.find<ChatService>();
-  // final WebsocketService _websocketService = Get.find<WebsocketService>();
-  // final AuthController _authController = Get.find<AuthController>();
+
   final ChatService _chatService;
   final WebsocketService _websocketService;
   final AuthController _authController;
@@ -21,7 +17,6 @@ class ChatController extends GetxController {
     this._websocketService,
     this._authController,
   );
-  // ... (Reactive State)
   final conversations = <Chat>[].obs;
   final messages = <Message>[].obs;
   final isLoadingConversations = false.obs;
@@ -30,7 +25,6 @@ class ChatController extends GetxController {
 
   String? _currentChannelName;
 
-  // --- LIFECYCLE ---
   @override
   void onInit() {
     super.onInit();
@@ -46,13 +40,10 @@ class ChatController extends GetxController {
     super.onClose();
   }
 
-  // --- HTTP METHODS ---
   Future<void> fetchConversations() async {
-    /* ... (لا تغيير) */
   }
 
   Future<void> fetchMessages(String otherUserId) async {
-    // ✅ التحقق من وجود المستخدم
     final myUserId = _authController.currentUser.value?.uid;
     if (myUserId == null) {
       print("Chat Error: Current user is null, cannot fetch messages.");
@@ -83,8 +74,6 @@ class ChatController extends GetxController {
 
   Future<void> sendMessage(String text, String otherUserId) async {
     if (text.trim().isEmpty) return;
-
-    // ✅ التحقق من وجود المستخدم
     final myUserId = _authController.currentUser.value?.uid;
     if (myUserId == null) {
       Get.snackbar('Error', 'You must be logged in to send messages.');
@@ -109,7 +98,6 @@ class ChatController extends GetxController {
     }
   }
 
-  // --- WEBSOCKET LOGIC ---
   void _listenToChannel(String otherUserId) {
     final myUserId = _authController.currentUser.value?.uid;
     if (myUserId == null) return;
@@ -142,8 +130,5 @@ class ChatController extends GetxController {
       },
     );
   }
-
-
-
 }
 */

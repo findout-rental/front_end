@@ -6,8 +6,7 @@ import 'package:project/features/my_apartments/presentation/widgets/booking_list
 class MyApartmentsPage extends StatelessWidget {
   MyApartmentsPage({super.key});
 
-  final BookingController bookingController =
-      Get.find<BookingController>();
+  final BookingController bookingController = Get.find<BookingController>();
 
   @override
   Widget build(BuildContext context) {
@@ -27,15 +26,9 @@ class MyApartmentsPage extends StatelessWidget {
         body: Obx(() {
           return TabBarView(
             children: [
-              BookingListTab(
-                bookings: bookingController.activeBookings,
-              ),
-              BookingListTab(
-                bookings: bookingController.completedBookings,
-              ),
-              BookingListTab(
-                bookings: bookingController.cancelledBookings,
-              ),
+              BookingListTab(bookings: bookingController.activeBookings),
+              BookingListTab(bookings: bookingController.completedBookings),
+              BookingListTab(bookings: bookingController.cancelledBookings),
             ],
           );
         }),

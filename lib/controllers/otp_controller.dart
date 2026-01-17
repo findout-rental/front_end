@@ -8,14 +8,13 @@ class OtpController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
   final AuthController _authController = Get.find<AuthController>();
 
-  // OTP inputs
-  final List<TextEditingController> controllers =
-      List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
 
-  final List<FocusNode> focusNodes =
-      List.generate(6, (_) => FocusNode());
+  final List<FocusNode> focusNodes = List.generate(6, (_) => FocusNode());
 
-  // State
   final isLoading = false.obs;
   final resendSeconds = 60.obs;
 
@@ -41,7 +40,6 @@ class OtpController extends GetxController {
     super.onClose();
   }
 
-  // ---------------- TIMER ----------------
   void startTimer() {
     resendSeconds.value = 60;
     _timer?.cancel();
@@ -54,73 +52,64 @@ class OtpController extends GetxController {
     });
   }
 
-  // ---------------- OTP VALUE ----------------
-  String get otpCode =>
-      controllers.map((e) => e.text).join();
+  String get otpCode => controllers.map((e) => e.text).join();
 
   bool get isOtpComplete => otpCode.length == 6;
 
-  // ---------------- VERIFY OTP ----------------
   Future<void> verifyOtp() async {
-  // 🔴 DEV MODE (تجاوز التحقق)
-  if (otpCode == '111111') {
-  // 🔴 DEV MODE
-  // نضرب verifyOtp الحقيقي لإعلام الباك
-  await _authService.verifyOtp(
-    mobileNumber: mobileNumber,
-    otpCode: otpCode,
-  );
+    // 🔴 DEV MODE (تجاوز التحقق)
+    if (otpCode == '111111') {
+      // 🔴 DEV MODE
+      // نضرب verifyOtp الحقيقي لإعلام الباك
+      await _authService.verifyOtp(
+        mobileNumber: mobileNumber,
+        otpCode: otpCode,
+      );
 
-  final args = Get.arguments;
+      final args = Get.arguments;
 
-  await _authController.completeRegistration(
-    isTenant: args['isTenant'],
-    personalImage: args['personalImage'],
-    idImage: args['idImage'],
-    otpCode: otpCode,
-  );
-  return;
-}
+      await _authController.completeRegistration(
+        isTenant: args['isTenant'],
+        personalImage: args['personalImage'],
+        idImage: args['idImage'],
+        otpCode: otpCode,
+      );
+      return;
+    }
 
+    if (!isOtpComplete) {
+      Get.snackbar('خطأ', 'الرجاء إدخال رمز التحقق كامل');
+      return;
+    }
 
-  // ✅ الحقيقي (سيبها كما هي)
-  if (!isOtpComplete) {
-    Get.snackbar('خطأ', 'الرجاء إدخال رمز التحقق كامل');
-    return;
+    try {
+      isLoading.value = true;
+
+      await _authService.verifyOtp(
+        mobileNumber: mobileNumber,
+        otpCode: otpCode,
+      );
+
+      final args = Get.arguments;
+
+      await _authController.completeRegistration(
+        isTenant: args['isTenant'],
+        personalImage: args['personalImage'],
+        idImage: args['idImage'],
+        otpCode: otpCode,
+      );
+    } catch (e) {
+      Get.snackbar('خطأ', 'فشل التحقق من الرمز');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  try {
-    isLoading.value = true;
-
-    await _authService.verifyOtp(
-      mobileNumber: mobileNumber,
-      otpCode: otpCode,
-    );
-
-    final args = Get.arguments;
-
-    await _authController.completeRegistration(
-      isTenant: args['isTenant'],
-      personalImage: args['personalImage'],
-      idImage: args['idImage'],
-      otpCode: otpCode,
-    );
-  } catch (e) {
-    Get.snackbar('خطأ', 'فشل التحقق من الرمز');
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-
-  // ---------------- RESEND OTP ----------------
   Future<void> resendOtp() async {
     if (resendSeconds.value > 0) return;
 
     try {
-      await _authService.sendOtp(
-        mobileNumber: mobileNumber,
-      );
+      await _authService.sendOtp(mobileNumber: mobileNumber);
 
       Get.snackbar('تم', 'تم إعادة إرسال الرمز');
       clearOtp();

@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/screens/reset_password_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/controllers/auth_controller.dart';
@@ -13,7 +11,7 @@ class ResetPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AuthController controller = Get.find();
-    final String mobileNumber = Get.arguments; // استلام رقم الهاتف
+    final String mobileNumber = Get.arguments;
     final otpController = TextEditingController();
     final passwordController = TextEditingController();
     final confirmPasswordController = TextEditingController();

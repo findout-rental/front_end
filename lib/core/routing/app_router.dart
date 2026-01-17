@@ -1,44 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project/bindings/otp_binding.dart';
-
-// Models
 import 'package:project/data/models/apartment_model.dart';
-import 'package:project/data/models/booking_model.dart'; // From HEAD
-import 'package:project/data/models/chat_model.dart'; // From OTP
-
-// Auth
+import 'package:project/data/models/booking_model.dart';
 import 'package:project/features/auth/forgot_password_page.dart';
 import 'package:project/features/auth/reset_password_page.dart';
-import 'package:project/features/auth/otp_page.dart'; // From OTP
+import 'package:project/features/auth/otp_page.dart';
 import 'package:project/features/auth/sign_in_page.dart';
 import 'package:project/features/auth/sign_up_page.dart';
 import 'package:project/features/auth/pending_approval_page.dart';
-
-// Home & Onboarding
 import 'package:project/features/home/home_page.dart';
 import 'package:project/features/onboarding/onboarding_screen.dart';
-
-// Chat
-// import 'package:project/features/chat/chats_screen.dart'; // Ensure this import exists
-// import 'package:project/features/chat/chat_detail_screen.dart'; // Ensure this import exists
-
-// Apartment
 import 'package:project/features/apartment/apartment_detail_page.dart';
 import 'package:project/features/apartment/add_apartment/add_apartment_page.dart';
-
-// Booking & Notifications
 import 'package:project/features/booking/booking_page.dart';
-import 'package:project/features/notification/notification_screen.dart'; // From OTP
-
-// Profile
+import 'package:project/features/notification/notification_screen.dart';
 import 'package:project/features/profile/presentation/screens/edit_profile_page.dart';
 
 class AppRouter {
   AppRouter._();
-  // ===============================
-  // Route names
-  // ===============================
   static const String onboarding = '/';
   static const String signIn = '/signIn';
   static const String signUp = '/signUp';
@@ -53,94 +33,64 @@ class AppRouter {
   static const String editProfile = '/editProfile';
   static const String forgotPassword = '/forgotPassword';
   static const String resetPassword = '/resetPassword';
-  static const String otp = '/otp'; // From OTP
-
-  // ===============================
-  // GetX Routes
-  // ===============================
+  static const String otp = '/otp';
   static final routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
     GetPage(name: signIn, page: () => const SignInPage()),
     GetPage(name: signUp, page: () => const SignUpPage()),
     GetPage(name: pendingApproval, page: () => const PendingApprovalPage()),
     GetPage(name: home, page: () => const HomePage()),
-
-    // Merged: Activated Chat routes from OTP branch
-    // GetPage(name: chats, page: () => const ChatsScreen()),
-    // GetPage(
-    //   name: chatDetail,
-    //   page: () => ChatDetailScreen(chat: Get.arguments as Chat),
-    // ),
-
     GetPage(
       name: apartmentDetail,
       page: () => ApartmentDetailPage(apartment: Get.arguments as Apartment),
     ),
-
     GetPage(name: addApartment, page: () => const AddApartmentPage()),
     GetPage(name: notifications, page: () => NotificationsScreen()),
     GetPage(name: editProfile, page: () => const EditProfilePage()),
     GetPage(name: forgotPassword, page: () => const ForgotPasswordPage()),
     GetPage(name: resetPassword, page: () => const ResetPasswordPage()),
-
-    // Merged: Kept the new, more complex booking route from HEAD
     GetPage(
-  name: AppRouter.booking,
-  page: () {
-    final args = Get.arguments;
-
-    Apartment apartment;
-    BookingModel? booking;
-
-    // ✅ Case A: تم تمرير Apartment مباشرة
-    if (args is Apartment) {
-      apartment = args;
-    }
-    // ✅ Case B: تم تمرير Map { apartment: ..., booking: ... }
-    else if (args is Map) {
-      final map = Map<String, dynamic>.from(args);
-
-      final aptArg = map['apartment'];
-      if (aptArg is Apartment) {
-        apartment = aptArg;
-      } else if (aptArg is Map) {
-        apartment = Apartment.fromJson(Map<String, dynamic>.from(aptArg));
-      } else {
-        throw ArgumentError(
-          'Booking route expected "apartment" as Apartment/Map but got: ${aptArg.runtimeType}',
-        );
-      }
-
-      final bArg = map['booking'];
-      if (bArg is BookingModel) {
-        booking = bArg;
-      } else if (bArg is Map) {
-        booking = BookingModel.fromJson(Map<String, dynamic>.from(bArg));
-      } else {
-        booking = null;
-      }
-    } else {
-      throw ArgumentError(
-        'Booking route expected Apartment or Map but got: ${args.runtimeType}',
-      );
-    }
-
-    return BookingPage(apartment: apartment, existingBooking: booking);
-  },
-),
-
-
-    // Merged: Added OTP route from OTP branch
+      name: AppRouter.booking,
+      page: () {
+        final args = Get.arguments;
+        Apartment apartment;
+        BookingModel? booking;
+        if (args is Apartment) {
+          apartment = args;
+        } else if (args is Map) {
+          final map = Map<String, dynamic>.from(args);
+          final aptArg = map['apartment'];
+          if (aptArg is Apartment) {
+            apartment = aptArg;
+          } else if (aptArg is Map) {
+            apartment = Apartment.fromJson(Map<String, dynamic>.from(aptArg));
+          } else {
+            throw ArgumentError(
+              'Booking route expected "apartment" as Apartment/Map but got: ${aptArg.runtimeType}',
+            );
+          }
+          final bArg = map['booking'];
+          if (bArg is BookingModel) {
+            booking = bArg;
+          } else if (bArg is Map) {
+            booking = BookingModel.fromJson(Map<String, dynamic>.from(bArg));
+          } else {
+            booking = null;
+          }
+        } else {
+          throw ArgumentError(
+            'Booking route expected Apartment or Map but got: ${args.runtimeType}',
+          );
+        }
+        return BookingPage(apartment: apartment, existingBooking: booking);
+      },
+    ),
     GetPage(
       name: AppRouter.otp,
       page: () => const OtpPage(),
       binding: OtpBinding(),
     ),
   ];
-
-  // ===============================
-  // Legacy Navigator (Optional)
-  // ===============================
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case onboarding:
@@ -151,67 +101,50 @@ class AppRouter {
         return _page(const SignUpPage());
       case pendingApproval:
         return _page(const PendingApprovalPage());
-
-      // Merged: Kept consistent style from OTP branch
       case home:
         return _page(const HomePage());
-      // case chats:
-      //   return _page(const ChatsScreen());
-
       case notifications:
         return _page(NotificationsScreen());
       case addApartment:
         return _page(const AddApartmentPage());
-
-      // Merged: Activated chatDetail from OTP branch
-      // case chatDetail:
-      //   final args = settings.arguments;
-      //   if (args is Chat) {
-      //     return _page(ChatDetailScreen(chat: args));
-      //   }
-      //   return _errorRoute('Chat expected, got ${args.runtimeType}');
-
       case apartmentDetail:
         final args = settings.arguments;
         if (args is Apartment) {
           return _page(ApartmentDetailPage(apartment: args));
         }
         return _errorRoute('Apartment expected, got ${args.runtimeType}');
-
-      // Note: Legacy booking route might need adjustment based on new GetPage logic
       case booking:
-  final args = settings.arguments;
-
-  Apartment apartment;
-  BookingModel? booking;
-
-  if (args is Apartment) {
-    apartment = args;
-  } else if (args is Map) {
-    final map = Map<String, dynamic>.from(args);
-
-    final aptArg = map['apartment'];
-    if (aptArg is Apartment) {
-      apartment = aptArg;
-    } else if (aptArg is Map) {
-      apartment = Apartment.fromJson(Map<String, dynamic>.from(aptArg));
-    } else {
-      return _errorRoute('Booking expected "apartment" but got ${aptArg.runtimeType}');
-    }
-
-    final bArg = map['booking'];
-    if (bArg is BookingModel) {
-      booking = bArg;
-    } else if (bArg is Map) {
-      booking = BookingModel.fromJson(Map<String, dynamic>.from(bArg));
-    }
-  } else {
-    return _errorRoute('Apartment/Map expected for booking, got ${args.runtimeType}');
-  }
-
-  return _page(BookingPage(apartment: apartment, existingBooking: booking));
-
-
+        final args = settings.arguments;
+        Apartment apartment;
+        BookingModel? booking;
+        if (args is Apartment) {
+          apartment = args;
+        } else if (args is Map) {
+          final map = Map<String, dynamic>.from(args);
+          final aptArg = map['apartment'];
+          if (aptArg is Apartment) {
+            apartment = aptArg;
+          } else if (aptArg is Map) {
+            apartment = Apartment.fromJson(Map<String, dynamic>.from(aptArg));
+          } else {
+            return _errorRoute(
+              'Booking expected "apartment" but got ${aptArg.runtimeType}',
+            );
+          }
+          final bArg = map['booking'];
+          if (bArg is BookingModel) {
+            booking = bArg;
+          } else if (bArg is Map) {
+            booking = BookingModel.fromJson(Map<String, dynamic>.from(bArg));
+          }
+        } else {
+          return _errorRoute(
+            'Apartment/Map expected for booking, got ${args.runtimeType}',
+          );
+        }
+        return _page(
+          BookingPage(apartment: apartment, existingBooking: booking),
+        );
       default:
         return _errorRoute('No route defined for ${settings.name}');
     }
@@ -219,7 +152,6 @@ class AppRouter {
 
   static MaterialPageRoute _page(Widget child) =>
       MaterialPageRoute(builder: (_) => child);
-
   static Route<dynamic> _errorRoute(String message) {
     return MaterialPageRoute(
       builder: (_) => Scaffold(

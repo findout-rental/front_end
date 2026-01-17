@@ -3,12 +3,6 @@ import 'package:get/get.dart';
 import 'package:project/controllers/otp_controller.dart';
 import 'package:project/shared_widgets/primary_button.dart';
 
-// otp_page.dart
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:project/controllers/otp_controller.dart';
-import 'package:project/shared_widgets/primary_button.dart';
-
 class OtpPage extends GetView<OtpController> {
   const OtpPage({super.key});
 
@@ -30,7 +24,6 @@ class OtpPage extends GetView<OtpController> {
             ),
             const SizedBox(height: 30),
 
-            // OTP fields
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(6, (index) {
@@ -40,7 +33,6 @@ class OtpPage extends GetView<OtpController> {
 
             const SizedBox(height: 24),
 
-            // Timer + Resend
             Obx(() {
               return TextButton(
                 onPressed: controller.resendSeconds.value == 0
@@ -58,9 +50,7 @@ class OtpPage extends GetView<OtpController> {
 
             Obx(() {
               return PrimaryButton(
-                text: controller.isLoading.value
-                    ? 'جارٍ التحقق...'
-                    : 'تأكيد',
+                text: controller.isLoading.value ? 'جارٍ التحقق...' : 'تأكيد',
                 onPressed: controller.isLoading.value
                     ? null
                     : controller.verifyOtp,

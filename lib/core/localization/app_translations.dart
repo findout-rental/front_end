@@ -1,15 +1,11 @@
-// lib/core/localization/app_translations.dart
-
 import 'package:get/get.dart';
 
 class AppTranslations extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
-    // =====================================================================
-    // 🇺🇸 English Translations
-    // =====================================================================
+    // English Translations
     'en_US': {
-      // --- General UI & Navigation ---
+      // General UI & Navigation
       'home': 'Home',
       'favorites': 'Favorites',
       'my_apartments':
@@ -29,14 +25,14 @@ class AppTranslations extends Translations {
       'error_occurred': 'An unexpected error occurred.',
       'oops': 'Oops!!',
 
-      // --- Onboarding ---
+      // Onboarding
       'onboarding_title_1': 'Choose your perfect place...',
       'onboarding_subtitle_1': 'and let comfort begin with a single tap',
       'onboarding_title_2': 'Reserve instantly',
       'onboarding_subtitle_2': 'manage your bookings anytime & anywhere',
       'get_started': 'Get Started',
 
-      // --- Auth ---
+      // Auth
       'sign_in': 'Sign In',
       'sign_up': 'Sign Up',
       'welcome_back': 'Welcome Back!',
@@ -63,13 +59,13 @@ class AppTranslations extends Translations {
       'please_fill_all_required_fields_correctly.':
           'Please fill all required fields correctly.',
 
-      // --- Profile ---
+      // Profile
       'edit_profile': 'Edit Profile',
       'settings': 'Settings',
       'logout': 'Logout',
       'save_changes': 'Save Changes',
 
-      // --- Apartments ---
+      // Apartments
       'add_your_apartment': 'Add Your Apartment',
       'add_apartment': 'Add Apartment',
       'apartment_details': 'Apartment Details',
@@ -96,7 +92,7 @@ class AppTranslations extends Translations {
       'choose_images': 'Choose Images',
       'no_images_selected': 'No images selected yet.',
 
-      // --- Bookings ---
+      // Bookings
       'confirm_booking': 'Confirm Booking',
       'edit_booking': 'Edit Booking',
       'your_trip': 'Your Trip',
@@ -113,7 +109,7 @@ class AppTranslations extends Translations {
       'confirm_cancellation_message':
           'Are you sure you want to cancel this booking?',
 
-      // --- Chat & Notifications ---
+      // Chat & Notifications
       'my_chats': 'My Chats',
       'notifications': 'Notifications',
       'no_notifications_yet': 'No notifications yet',
@@ -122,11 +118,9 @@ class AppTranslations extends Translations {
       'error': 'Erorr',
     },
 
-    // =====================================================================
-    // 🇸🇦 Arabic Translations
-    // =====================================================================
+    // Arabic Translations
     'ar_SA': {
-      // --- General UI & Navigation ---
+      // General UI & Navigation
       'home': 'الرئيسية',
       'favorites': 'المفضلة',
       'my_apartments': 'حجوزاتي',
@@ -145,14 +139,14 @@ class AppTranslations extends Translations {
       'error_occurred': 'حدث خطأ غير متوقع.',
       'oops': 'عفوًا!!',
 
-      // --- Onboarding ---
+      // Onboarding
       'onboarding_title_1': 'اختر مكانك المثالي...',
       'onboarding_subtitle_1': 'ودع الراحة تبدأ بنقرة واحدة',
       'onboarding_title_2': 'احجز على الفور',
       'onboarding_subtitle_2': 'وأدر حجوزاتك في أي وقت ومن أي مكان',
       'get_started': 'ابدأ الآن',
 
-      // --- Auth ---
+      // Auth
       'sign_in': 'تسجيل الدخول',
       'sign_up': 'إنشاء حساب',
       'welcome_back': 'أهلاً بعودتك!',
@@ -177,13 +171,13 @@ class AppTranslations extends Translations {
       'otp_code': 'رمز التحقق',
       'new_password': 'كلمة المرور الجديدة',
 
-      // --- Profile ---
+      // Profile
       'edit_profile': 'تعديل الملف الشخصي',
       'settings': 'الإعدادات',
       'logout': 'تسجيل الخروج',
       'save_changes': 'حفظ التغييرات',
 
-      // --- Apartments ---
+      // Apartments
       'add_your_apartment': 'أضف شقتك',
       'add_apartment': 'إضافة شقة',
       'apartment_details': 'تفاصيل الشقة',
@@ -210,7 +204,7 @@ class AppTranslations extends Translations {
       'choose_images': 'اختر صورًا',
       'no_images_selected': 'لم يتم اختيار أي صور بعد.',
 
-      // --- Bookings ---
+      // Bookings
       'confirm_booking': 'تأكيد الحجز',
       'edit_booking': 'تعديل الحجز',
       'your_trip': 'رحلتك',
@@ -226,7 +220,7 @@ class AppTranslations extends Translations {
       'confirm_cancellation_title': 'تأكيد الإلغاء',
       'confirm_cancellation_message': 'هل أنت متأكد أنك تريد إلغاء هذا الحجز؟',
 
-      // --- Chat & Notifications ---
+      // Chat & Notifications
       'my_chats': 'محادثاتي',
       'notifications': 'الإشعارات',
       'no_notifications_yet': 'لا توجد إشعارات بعد',

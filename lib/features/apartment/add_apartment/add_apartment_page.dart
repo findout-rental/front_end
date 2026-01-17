@@ -23,10 +23,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
   bool _hasBalcony = false;
   bool _hasAC = false;
   bool _hacInternet = false;
-
-  // Merged: Removed duplicate/obsolete properties from HEAD branch.
-  // The OTP branch's architecture is cleaner.
-
   final _step1FormKey = GlobalKey<FormState>();
   final _step2FormKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -56,7 +52,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     if (_hacInternet) amenities.add('WiFi');
 
     final formData = FormData();
-    // ---------- FIELDS ----------
     formData.fields.addAll([
       MapEntry('title', _titleController.text.trim()),
       MapEntry('description', _descriptionController.text.trim()),
@@ -77,11 +72,9 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
       MapEntry('bathrooms', _bathrooms.toString()),
       MapEntry('max_guests', (_bedrooms * 2).toString()),
     ]);
-    // ---------- AMENITIES ARRAY ----------
     for (int i = 0; i < amenities.length; i++) {
       formData.fields.add(MapEntry('amenities[$i]', amenities[i]));
     }
-    // ---------- PHOTOS ARRAY (STRINGS) ----------
     for (int i = 0; i < _apartmentImages.length; i++) {
       final bytes = await _apartmentImages[i].readAsBytes();
       final base64Image = base64Encode(bytes);
@@ -116,9 +109,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     });
   }
 
-  // Merged: Removed the old _submitForm() function from HEAD.
-  // The new logic is correctly placed in the Stepper's onStepContinue.
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -133,7 +123,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
           } else if (_currentStep < 2) {
             setState(() => _currentStep += 1);
           } else {
-            // ✅ Last step: Validate and submit via controller
             if (_apartmentImages.isEmpty) {
               Get.snackbar('خطأ', 'لازم تضيف صورة واحدة على الأقل');
               return;
@@ -156,8 +145,6 @@ class _AddApartmentPageState extends State<AddApartmentPage> {
     );
   }
 
-  // ... All the _buildStep...() and other UI methods remain unchanged ...
-  // (Paste the rest of your UI build methods here, they are not in conflict)
   List<Step> _buildSteps() {
     return [
       Step(

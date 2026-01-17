@@ -1,5 +1,3 @@
-// lib/features/booking/booking_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -13,8 +11,7 @@ import 'package:project/core/utils/photo_helper.dart';
 
 class BookingPage extends StatefulWidget {
   final Apartment apartment;
-  final BookingModel? existingBooking; // ✅ معامل اختياري لوضع التعديل
-
+  final BookingModel? existingBooking;
   const BookingPage({
     super.key,
     required this.apartment,
@@ -26,23 +23,17 @@ class BookingPage extends StatefulWidget {
 }
 
 class _BookingPageState extends State<BookingPage> {
-  // --- LOCAL STATE ---
   DateTimeRange? _selectedDateRange;
-  // (يمكن إضافة منطق التحقق من التوافر هنا لاحقًا)
-
-  // --- DEPENDENCIES ---
   final BookingController controller = Get.find<BookingController>();
 
   @override
   void initState() {
     super.initState();
-    // ✅ إذا كنا في وضع التعديل، املأ التواريخ الحالية
     if (widget.existingBooking != null) {
       _selectedDateRange = widget.existingBooking!.dateRange;
     }
   }
 
-  /// يفتح منتقي التاريخ ويحدث الحالة
   Future<void> _pickDateRange() async {
     final newDateRange = await showDateRangePicker(
       context: context,
@@ -61,38 +52,31 @@ class _BookingPageState extends State<BookingPage> {
     }
   }
 
-  /// ✅ دالة جديدة لمعالجة عملية الإرسال (إنشاء أو تعديل)
   void _submit() {
     if (_selectedDateRange == null) return;
 
     final bool isEditing = widget.existingBooking != null;
 
     if (isEditing) {
-      // --- وضع التعديل ---
       controller.updateBooking(
         bookingId: widget.existingBooking!.bookingId,
         newDateRange: _selectedDateRange!,
       );
     } else {
-      // --- وضع الإنشاء ---
       controller
           .createBooking(
             apartment: widget.apartment,
             dateRange: _selectedDateRange!,
           )
           .then((_) {
-            // بعد النجاح، أغلق الصفحة وأعد 'true' لإعلام الصفحة السابقة
             if (mounted) Navigator.pop(context, true);
           })
-          .catchError((_) {
-            // لا تفعل شيئًا في حالة الخطأ، المراقب سيعرض Snackbar
-          });
+          .catchError((_) {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ تحديد هل نحن في وضع التعديل
     final bool isEditing = widget.existingBooking != null;
 
     return Scaffold(
@@ -111,7 +95,6 @@ class _BookingPageState extends State<BookingPage> {
             _buildPriceDetails(),
             const SizedBox(height: 32),
 
-            // ✅ استخدام Obx لمراقبة حالة التحميل
             Obx(
               () => PrimaryButton(
                 text: controller.isLoading.value
@@ -135,7 +118,6 @@ class _BookingPageState extends State<BookingPage> {
     final s = raw.trim();
     if (s.isEmpty) return _thumbPlaceholder();
 
-    // 1) Base64 (حتى لو جاي ضمن /storage//9j/.. أو URL)
     final Uint8List? bytes = PhotoHelper.decodeFromAnything(s);
     if (bytes != null) {
       return Image.memory(
@@ -148,7 +130,6 @@ class _BookingPageState extends State<BookingPage> {
       );
     }
 
-    // 2) URL كامل
     if (s.startsWith('http://') || s.startsWith('https://')) {
       return Image.network(
         s,
@@ -159,7 +140,6 @@ class _BookingPageState extends State<BookingPage> {
       );
     }
 
-    // 3) مسار نسبي /storage/.. أو storage/..
     final url = _toAbsoluteUrl(s);
     if (url == null) return _thumbPlaceholder();
 
@@ -176,10 +156,8 @@ class _BookingPageState extends State<BookingPage> {
     final host = ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
     var s = raw.trim();
 
-    // نظف تكرار /storage//
     s = s.replaceFirst('/storage//', '/storage/');
 
-    // إذا كان Base64 متخفي هون لا تبني URL
     if (s.contains('/9j/') || s.startsWith('/9j/')) return null;
 
     if (s.startsWith('http://') || s.startsWith('https://')) return s;
@@ -199,8 +177,6 @@ class _BookingPageState extends State<BookingPage> {
       ),
     );
   }
-
-  // --- Helper Widgets to build UI ---
 
   Widget _buildApartmentSummary() {
     final theme = Theme.of(context);
@@ -276,7 +252,7 @@ class _BookingPageState extends State<BookingPage> {
     final theme = Theme.of(context);
     final nights = _selectedDateRange?.duration.inDays ?? 0;
     final pricePerNight = widget.apartment.pricePerNight;
-    final serviceFee = 50; // يمكن أن تأتي من الخادم
+    final serviceFee = 50;
     final total = (pricePerNight * nights) + serviceFee;
 
     return Column(

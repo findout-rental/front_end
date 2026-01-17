@@ -12,7 +12,7 @@ class CustomTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final int maxLines;
-  final ValueChanged<String>? onChanged; // added
+  final ValueChanged<String>? onChanged;
 
   const CustomTextField({
     super.key,

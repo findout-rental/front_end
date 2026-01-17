@@ -16,7 +16,8 @@ class ApartmentListItemWidget extends StatefulWidget {
   });
 
   @override
-  State<ApartmentListItemWidget> createState() => _ApartmentListItemWidgetState();
+  State<ApartmentListItemWidget> createState() =>
+      _ApartmentListItemWidgetState();
 }
 
 class _ApartmentListItemWidgetState extends State<ApartmentListItemWidget> {
@@ -31,10 +32,8 @@ class _ApartmentListItemWidgetState extends State<ApartmentListItemWidget> {
         ? widget.apartment.images.first.toString().trim()
         : '';
 
-    // ✅ 1) جرّب Base64 حتى لو كان ضمن URL
     _bytes = PhotoHelper.decodeFromAnything(raw);
 
-    // ✅ 2) إذا مو Base64، اعتبره رابط/مسار عادي
     if (_bytes == null) {
       _url = _toAbsoluteUrl(raw);
     }
@@ -44,10 +43,8 @@ class _ApartmentListItemWidgetState extends State<ApartmentListItemWidget> {
     var s = raw.trim();
     if (s.isEmpty) return null;
 
-    // إذا كان URL كامل
     if (s.startsWith('http://') || s.startsWith('https://')) return s;
 
-    // إذا كان /storage/... عادي
     final host = ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
     if (s.startsWith('/')) return '$host$s';
     return '$host/$s';
@@ -114,8 +111,11 @@ class _ApartmentListItemWidgetState extends State<ApartmentListItemWidget> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined,
-                          color: theme.primaryColor, size: 16),
+                      Icon(
+                        Icons.location_on_outlined,
+                        color: theme.primaryColor,
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -159,8 +159,9 @@ class _ApartmentListItemWidgetState extends State<ApartmentListItemWidget> {
       return Image.network(
         _url!,
         fit: BoxFit.cover,
-        loadingBuilder: (_, child, progress) =>
-            progress == null ? child : const Center(child: CircularProgressIndicator()),
+        loadingBuilder: (_, child, progress) => progress == null
+            ? child
+            : const Center(child: CircularProgressIndicator()),
         errorBuilder: (_, __, ___) => _placeholderImage(),
       );
     }

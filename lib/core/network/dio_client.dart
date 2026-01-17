@@ -16,12 +16,10 @@ class DioClient {
         responseType: ResponseType.json,
         headers: {'Accept': 'application/json'},
 
-        // ✅ مهم: يخلي amenities[]=x&amenities[]=y
-    listFormat: ListFormat.multiCompatible,
+        listFormat: ListFormat.multiCompatible,
       ),
     );
 
-    // Auth + Logging (debug only) + Error mapping to ApiException
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
@@ -78,8 +76,8 @@ class DioClient {
           final responseData = e.response?.data;
           final String message =
               (responseData is Map && responseData['message'] != null)
-                  ? responseData['message'].toString()
-                  : 'Unexpected error occurred';
+              ? responseData['message'].toString()
+              : 'Unexpected error occurred';
 
           final ApiErrorType type;
           switch (e.response?.statusCode) {
@@ -105,7 +103,6 @@ class DioClient {
             statusCode: e.response?.statusCode,
           );
 
-          // نمرر ApiException داخل DioException.error (بدل DioException الخام)
           handler.reject(
             DioException(
               requestOptions: e.requestOptions,
@@ -134,7 +131,6 @@ class DioClient {
     return safe;
   }
 
-  // ================= REQUEST METHODS =================
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
     return _dio.get(path, queryParameters: queryParameters);
   }

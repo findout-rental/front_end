@@ -16,7 +16,6 @@ class RoleToggle extends StatelessWidget {
     required this.onChanged,
   });
 
-  /// Factory constructor مريح لحالة Tenant / Owner
   factory RoleToggle.tenantOwner({
     Key? key,
     required bool isTenant,

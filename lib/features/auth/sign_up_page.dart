@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:project/controllers/auth_controller.dart';
 import 'package:project/core/routing/app_router.dart';
-// import 'package:project/features/auth/otp_verification_page.dart'; // This import seems unused now
 import 'package:project/shared_widgets/custom_text_field.dart';
 import 'package:project/shared_widgets/image_picker_box.dart';
 import 'package:project/shared_widgets/password_field.dart';
@@ -20,32 +19,20 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  // ===============================
-  // LOCAL UI STATE
-  // ===============================
   bool _isTenant = true;
   File? _personalImage;
   File? _idImage;
 
-  // ===============================
-  // DEPENDENCIES
-  // ===============================
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _dobController = TextEditingController();
   final AuthController controller = Get.find<AuthController>();
 
-  // ===============================
-  // LIFECYCLE
-  // ===============================
   @override
   void dispose() {
     _dobController.dispose();
     super.dispose();
   }
 
-  // ===============================
-  // HELPERS
-  // ===============================
   Future<void> _pickImage(ValueChanged<File?> onPicked) async {
     final XFile? picked = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -71,9 +58,6 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  /// ===============================
-  /// SIGN UP FLOW
-  /// ===============================
   Future<void> _handleSignUp() async {
     await controller.register(
       isTenant: _isTenant,
@@ -82,9 +66,6 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  // ===============================
-  // UI
-  // ===============================
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -109,7 +90,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   style: theme.textTheme.titleLarge,
                 ),
                 const SizedBox(height: 20),
-                // Role
                 RoleToggle(
                   optionOneText: 'Tenant',
                   optionTwoText: 'Owner',
@@ -180,16 +160,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ],
                 const SizedBox(height: 24),
-                
-                // --- MERGED PART ---
                 PrimaryButton(
                   text: controller.isLoading.value
-                      ? 'Processing...'.tr // Use clearer loading text, still translatable
-                      : 'sign_up'.tr, // Keep using translation
+                      ? 'Processing...'.tr
+                      : 'sign_up'.tr,
                   onPressed: controller.isLoading.value ? null : _handleSignUp,
                 ),
-                // --- END OF MERGED PART ---
-
                 const SizedBox(height: 16),
                 RichText(
                   textAlign: TextAlign.center,
@@ -204,8 +180,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           color: theme.primaryColor,
                         ),
                         recognizer: TapGestureRecognizer()
-                          ..onTap =
-                              () => Get.offAllNamed(AppRouter.signIn),
+                          ..onTap = () => Get.offAllNamed(AppRouter.signIn),
                       ),
                     ],
                   ),

@@ -51,7 +51,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             buttonText: isLastPage ? 'get_started'.tr : 'next'.tr,
             onPressed: () {
               if (isLastPage) {
-                // Use GetX to clear navigation stack after onboarding
                 Get.offAllNamed(AppRouter.signIn);
               } else {
                 _controller.nextPage(

@@ -1,8 +1,6 @@
-// apartment_controller.dart
 import 'package:get/get.dart' hide FormData;
 import 'package:dio/dio.dart' as dio;
 import 'dart:async';
-
 import 'package:project/core/storage/auth_storage.dart';
 import 'package:project/controllers/auth_controller.dart';
 import 'package:project/data/models/apartment_model.dart';
@@ -10,16 +8,13 @@ import 'package:project/services/apartment_service.dart';
 import 'package:project/services/auth_service.dart';
 import 'package:project/services/favorite_service.dart';
 
-
 class ApartmentController extends GetxController {
-  // --- DEPENDENCIES ---
   final ApartmentService _apartmentService;
   final FavoriteService _favoriteService;
   final AuthService _authService;
   final AuthStorage _authStorage;
   final activeFilters = <String, dynamic>{}.obs;
-Timer? _searchDebounce;
-
+  Timer? _searchDebounce;
 
   ApartmentController(
     this._apartmentService,
@@ -37,10 +32,6 @@ Timer? _searchDebounce;
   List<Apartment> get favoriteApartments =>
       allApartments.where((apt) => apt.isFavorited).toList();
 
-  // ---------------------------------------------------------------------------
-  // Role resolution
-  // نعتمد أولاً على AuthController.currentUser ثم fallback على AuthStorage.user
-  // ---------------------------------------------------------------------------
   String? get _roleFromAuthController {
     try {
       final auth = Get.find<AuthController>();
@@ -48,7 +39,7 @@ Timer? _searchDebounce;
       if (user == null) return null;
       if (user.isOwner) return 'owner';
       if (user.isTenant) return 'tenant';
-      return user.role.name; // fallback
+      return user.role.name;
     } catch (_) {
       return null;
     }
@@ -89,54 +80,44 @@ Timer? _searchDebounce;
     }
   }
 
+  Map<String, dynamic> _normalizeFilters(Map<String, dynamic> input) {
+    final out = <String, dynamic>{};
 
-Map<String, dynamic> _normalizeFilters(Map<String, dynamic> input) {
-  final out = <String, dynamic>{};
+    input.forEach((k, v) {
+      if (v == null) return;
+      if (v is String && v.trim().isEmpty) return;
+      if (v is List && v.isEmpty) return;
+      out[k] = v;
+    });
 
-  input.forEach((k, v) {
-    if (v == null) return;
-    if (v is String && v.trim().isEmpty) return;
-    if (v is List && v.isEmpty) return;
-    out[k] = v;
-  });
+    if (out['amenities'] is List) {
+      out['amenities[]'] = out.remove('amenities');
+    }
 
-  // ✅ Laravel/PHP: لازم amenities[] (مو amenities)
-  if (out['amenities'] is List) {
-    out['amenities[]'] = out.remove('amenities');
+    return out;
   }
 
-  return out;
-}
+  void applyFilters(Map<String, dynamic> filters) {
+    final normalized = _normalizeFilters(filters);
+    activeFilters.assignAll(normalized);
+    fetchApartments(filters: normalized);
+  }
 
-void applyFilters(Map<String, dynamic> filters) {
-  final normalized = _normalizeFilters(filters);
-  activeFilters.assignAll(normalized);
-  fetchApartments(filters: normalized);
-}
+  void clearFilters() {
+    activeFilters.clear();
+    fetchApartments(filters: const {});
+  }
 
-void clearFilters() {
-  activeFilters.clear();
-  fetchApartments(filters: const {});
-}
-
-
-
-
-  // =========================
-  // FETCH
-  // =========================
   Future<void> fetchApartments({Map<String, dynamic>? filters}) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-
-      // ✅ إذا ما عنا role لسه (قبل login) لا تعمل request
       if (role == null) return;
+      final normalized = _normalizeFilters(
+        filters ?? Map<String, dynamic>.from(activeFilters),
+      );
+      if (filters != null) activeFilters.assignAll(normalized);
 
- final normalized = _normalizeFilters(filters ?? Map<String, dynamic>.from(activeFilters));
-    if (filters != null) activeFilters.assignAll(normalized);
-
-      // ✅ 1) اختار endpoint حسب role
       final apartmentsFuture = isOwner
           ? _apartmentService.getOwnerApartments(filters: normalized)
           : _apartmentService.getApartments(filters: normalized);
@@ -144,7 +125,6 @@ void clearFilters() {
       dio.Response apartmentsResponse;
       dio.Response? favoritesResponse;
 
-      // ✅ 2) favorites فقط للـ tenant
       if (isTenant) {
         final responses = await Future.wait([
           apartmentsFuture,
@@ -156,7 +136,6 @@ void clearFilters() {
         apartmentsResponse = await apartmentsFuture;
       }
 
-      // ✅ 3) استخراج الشقق (يدعم أكثر من شكل response)
       final apartmentData = _extractApartmentsList(apartmentsResponse.data);
 
       final fetchedList = apartmentData
@@ -164,14 +143,12 @@ void clearFilters() {
           .map((e) => Apartment.fromJson(Map<String, dynamic>.from(e)))
           .toList();
 
-      // ✅ 4) استخراج المفضلة (Tenant فقط)
       final favoriteIds = <String>{};
       if (isTenant && favoritesResponse != null) {
         final favList = _extractFavoritesList(favoritesResponse.data);
         favoriteIds.addAll(favList.map((e) => e.toString()));
       }
 
-      // ✅ 5) تعليم الشقق المفضلة
       for (final apartment in fetchedList) {
         final idStr = apartment.id.toString();
         apartment.isFavorited = favoriteIds.contains(idStr);
@@ -186,61 +163,49 @@ void clearFilters() {
     }
   }
 
-  // =========================
-  // SEARCH (from getX_v2)
-  // =========================
   void searchApartments(String query) {
-  _searchDebounce?.cancel();
-  _searchDebounce = Timer(const Duration(milliseconds: 400), () {
-    final q = query.trim();
-    final next = Map<String, dynamic>.from(activeFilters);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      final q = query.trim();
+      final next = Map<String, dynamic>.from(activeFilters);
 
-    if (q.isEmpty) {
-      next.remove('search');
-    } else {
-      next['search'] = q;
-    }
+      if (q.isEmpty) {
+        next.remove('search');
+      } else {
+        next['search'] = q;
+      }
 
-    applyFilters(next);
-  });
-}
+      applyFilters(next);
+    });
+  }
 
-@override
-void onClose() {
-  _searchDebounce?.cancel();
-  super.onClose();
-}
+  @override
+  void onClose() {
+    _searchDebounce?.cancel();
+    super.onClose();
+  }
 
-
-  // ---------------------------------------------------------------------------
-  // Helpers (from my-work)
-  // ---------------------------------------------------------------------------
   List<dynamic> _extractApartmentsList(dynamic raw) {
     if (raw is! Map<String, dynamic>) return [];
 
     final data = raw['data'];
 
-    // { data: { apartments: [...] } }
     if (data is Map<String, dynamic> && data['apartments'] is List) {
       return List<dynamic>.from(data['apartments']);
     }
 
-    // { data: [...] }
     if (data is List) {
       return List<dynamic>.from(data);
     }
 
-    // { apartments: [...] }
     if (raw['apartments'] is List) {
       return List<dynamic>.from(raw['apartments']);
     }
 
-    // { data: { items: [...] } }
     if (data is Map<String, dynamic> && data['items'] is List) {
       return List<dynamic>.from(data['items']);
     }
 
-    // { data: { data: { apartments: [...] } } }
     if (data is Map<String, dynamic> &&
         data['data'] is Map<String, dynamic> &&
         (data['data'] as Map<String, dynamic>)['apartments'] is List) {
@@ -256,10 +221,8 @@ void onClose() {
     if (raw is! Map<String, dynamic>) return [];
     final data = raw['data'];
 
-    // { data: [ ... ] }
     if (data is List) return data;
 
-    // { data: { ids: [ ... ] } }
     if (data is Map<String, dynamic> && data['ids'] is List) {
       return List<dynamic>.from(data['ids']);
     }
@@ -267,9 +230,6 @@ void onClose() {
     return [];
   }
 
-  // =========================
-  // ADD APARTMENT (merged: owner-only + detailed validation errors)
-  // =========================
   Future<bool> addApartment(dio.FormData formData) async {
     final auth = Get.find<AuthController>();
     if (auth.currentUser.value?.isOwner != true) {
@@ -282,7 +242,6 @@ void onClose() {
 
       await _apartmentService.addApartment(formData);
 
-      // بعد الإضافة: جيب بيانات owner مباشرة/حسب role
       await fetchApartments();
 
       Get.snackbar('نجاح', 'تمت إضافة الشقة بنجاح');
@@ -291,7 +250,6 @@ void onClose() {
       final data = e.response?.data;
       String msg = 'فشل إضافة الشقة';
 
-      // دمج منطق Laravel validation errors من getX_v2
       if (data is Map) {
         final errors = data['errors'];
         if (errors is Map && errors.isNotEmpty) {
@@ -312,11 +270,7 @@ void onClose() {
     }
   }
 
-  // =========================
-  // FAVORITES
-  // =========================
   Future<void> toggleFavoriteStatus(String apartmentId) async {
-    // ✅ ممنوع للـ owner (لأنه endpoint Tenant)
     if (!isTenant) return;
 
     final index = allApartments.indexWhere(
@@ -327,7 +281,6 @@ void onClose() {
     final apartment = allApartments[index];
     final originalStatus = apartment.isFavorited;
 
-    // optimistic update
     apartment.isFavorited = !originalStatus;
     allApartments.refresh();
     filteredApartments.refresh();
@@ -337,7 +290,6 @@ void onClose() {
           ? await _favoriteService.removeFromFavorites(apartmentId)
           : await _favoriteService.addToFavorites(apartmentId);
     } catch (e) {
-      // rollback
       apartment.isFavorited = originalStatus;
       allApartments.refresh();
       filteredApartments.refresh();
