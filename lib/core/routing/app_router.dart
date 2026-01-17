@@ -85,14 +85,50 @@ class AppRouter {
 
     // Merged: Kept the new, more complex booking route from HEAD
     GetPage(
-      name: AppRouter.booking,
-      page: () {
-        final arguments = Get.arguments as Map<String, dynamic>;
-        final apartment = arguments['apartment'] as Apartment;
-        final booking = arguments['booking'] as BookingModel?; // Can be null
-        return BookingPage(apartment: apartment, existingBooking: booking);
-      },
-    ),
+  name: AppRouter.booking,
+  page: () {
+    final args = Get.arguments;
+
+    Apartment apartment;
+    BookingModel? booking;
+
+    // ✅ Case A: تم تمرير Apartment مباشرة
+    if (args is Apartment) {
+      apartment = args;
+    }
+    // ✅ Case B: تم تمرير Map { apartment: ..., booking: ... }
+    else if (args is Map) {
+      final map = Map<String, dynamic>.from(args);
+
+      final aptArg = map['apartment'];
+      if (aptArg is Apartment) {
+        apartment = aptArg;
+      } else if (aptArg is Map) {
+        apartment = Apartment.fromJson(Map<String, dynamic>.from(aptArg));
+      } else {
+        throw ArgumentError(
+          'Booking route expected "apartment" as Apartment/Map but got: ${aptArg.runtimeType}',
+        );
+      }
+
+      final bArg = map['booking'];
+      if (bArg is BookingModel) {
+        booking = bArg;
+      } else if (bArg is Map) {
+        booking = BookingModel.fromJson(Map<String, dynamic>.from(bArg));
+      } else {
+        booking = null;
+      }
+    } else {
+      throw ArgumentError(
+        'Booking route expected Apartment or Map but got: ${args.runtimeType}',
+      );
+    }
+
+    return BookingPage(apartment: apartment, existingBooking: booking);
+  },
+),
+
 
     // Merged: Added OTP route from OTP branch
     GetPage(
@@ -144,13 +180,37 @@ class AppRouter {
 
       // Note: Legacy booking route might need adjustment based on new GetPage logic
       case booking:
-        final args = settings.arguments;
-        if (args is Apartment) {
-          return _page(BookingPage(apartment: args));
-        }
-        return _errorRoute(
-          'Apartment expected for legacy route, got ${args.runtimeType}',
-        );
+  final args = settings.arguments;
+
+  Apartment apartment;
+  BookingModel? booking;
+
+  if (args is Apartment) {
+    apartment = args;
+  } else if (args is Map) {
+    final map = Map<String, dynamic>.from(args);
+
+    final aptArg = map['apartment'];
+    if (aptArg is Apartment) {
+      apartment = aptArg;
+    } else if (aptArg is Map) {
+      apartment = Apartment.fromJson(Map<String, dynamic>.from(aptArg));
+    } else {
+      return _errorRoute('Booking expected "apartment" but got ${aptArg.runtimeType}');
+    }
+
+    final bArg = map['booking'];
+    if (bArg is BookingModel) {
+      booking = bArg;
+    } else if (bArg is Map) {
+      booking = BookingModel.fromJson(Map<String, dynamic>.from(bArg));
+    }
+  } else {
+    return _errorRoute('Apartment/Map expected for booking, got ${args.runtimeType}');
+  }
+
+  return _page(BookingPage(apartment: apartment, existingBooking: booking));
+
 
       default:
         return _errorRoute('No route defined for ${settings.name}');

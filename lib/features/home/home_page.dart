@@ -74,84 +74,113 @@ class _HomePageState extends State<HomePage> {
       }),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: Obx(() {
-          final current = homeController.selectedIndex.value;
+      bottomNavigationBar: SafeArea(
+  top: false,
+  child: BottomAppBar(
+    shape: const CircularNotchedRectangle(),
+    notchMargin: 8,
+    child: Obx(() {
+      final current = homeController.selectedIndex.value;
+      final isOwner = authController.currentUser.value?.isOwner == true;
+
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          // ✅ gap responsive لمكان الـ FAB (بين 64 و 96 حسب عرض الجهاز)
+          final double gap = isOwner
+              ? (constraints.maxWidth * 0.18).clamp(64.0, 96.0).toDouble()
+              : 0.0;
+
           return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(
-                theme,
-                Icons.home_filled,
-                'الرئيسية',
-                0,
-                current == 0,
+              Expanded(
+                child: _buildNavItem(
+                  theme,
+                  Icons.home_filled,
+                  'الرئيسية',
+                  0,
+                  current == 0,
+                ),
               ),
-              _buildNavItem(
-                theme,
-                Icons.favorite,
-                'المفضلة',
-                1,
-                current == 1,
+              Expanded(
+                child: _buildNavItem(
+                  theme,
+                  Icons.favorite,
+                  'المفضلة',
+                  1,
+                  current == 1,
+                ),
               ),
-              const SizedBox(width: 48),
-              _buildNavItem(
-                theme,
-                Icons.apartment,
-                'شققي',
-                2,
-                current == 2,
+
+              if (isOwner) SizedBox(width: gap),
+
+              Expanded(
+                child: _buildNavItem(
+                  theme,
+                  Icons.apartment,
+                  'شققي',
+                  2,
+                  current == 2,
+                ),
               ),
-              _buildNavItem(
-                theme,
-                Icons.person,
-                'حسابي',
-                3,
-                current == 3,
+              Expanded(
+                child: _buildNavItem(
+                  theme,
+                  Icons.person,
+                  'حسابي',
+                  3,
+                  current == 3,
+                ),
               ),
             ],
           );
-        }),
-      ),
+        },
+      );
+    }),
+  ),
+),
+
+
     );
   }
 
   Widget _buildNavItem(
-    ThemeData theme,
-    IconData icon,
-    String label,
-    int index,
-    bool isSelected,
-  ) {
-    return Expanded(
-      child: InkWell(
-        onTap: () => homeController.onTabTapped(index),
-        borderRadius: BorderRadius.circular(24),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: isSelected ? theme.primaryColor : Colors.grey.shade500,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: isSelected ? theme.primaryColor : Colors.grey.shade600,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
+  ThemeData theme,
+  IconData icon,
+  String label,
+  int index,
+  bool isSelected,
+) {
+  return InkWell(
+    onTap: () => homeController.onTabTapped(index),
+    borderRadius: BorderRadius.circular(24),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6), // ✅ أقل لتجنب overflow
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? theme.primaryColor : Colors.grey.shade500,
           ),
-        ),
+          const SizedBox(height: 2),
+          FittedBox( // ✅ يجعل النص responsive وما يعمل overflow
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isSelected ? theme.primaryColor : Colors.grey.shade600,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
 
 // -----------------------------------------------------------------------------
@@ -191,21 +220,24 @@ class _HomeContent extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: () async {
-                    final filters =
-                        await showModalBottomSheet<Map<String, dynamic>>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => const FilterBottomSheet(),
-                    );
+                GestureDetector(
+  onLongPress: controller.clearFilters, // ✅ ضغط مطوّل يمسح الفلاتر
+  child: IconButton(
+    icon: const Icon(Icons.filter_list),
+    onPressed: () async {
+      final filters = await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => const FilterBottomSheet(),
+      );
 
-                    if (filters != null) {
-                      controller.fetchApartments(filters: filters);
-                    }
-                  },
-                ),
+      if (filters != null) {
+        controller.applyFilters(filters); // ✅ بدل fetchApartments
+      }
+    },
+  ),
+),
+
               ],
             ),
           ),

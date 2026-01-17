@@ -1,12 +1,16 @@
 import 'dart:typed_data';
 import 'package:animated_rating_stars/animated_rating_stars.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:project/controllers/auth_controller.dart';
+import 'package:project/controllers/booking_controller.dart';
 import 'package:project/core/network/api_endpoints.dart';
 import 'package:project/core/routing/app_router.dart';
 import 'package:project/core/utils/photo_helper.dart';
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/chat_model.dart';
 import 'package:project/shared_widgets/primary_button.dart';
+
 
 class ApartmentDetailPage extends StatefulWidget {
   final Apartment apartment;
@@ -20,6 +24,22 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   int _currentImageIndex = 0;
   late double _userRating;
   late bool _isAvailable;
+  
+
+  bool _ratingSubmitted = false;
+
+void _submitRating() {
+  if (_userRating <= 0) return;
+
+  setState(() => _ratingSubmitted = true);
+
+  Get.snackbar(
+    'تم',
+    'تم حفظ تقييمك (واجهة فقط حالياً)',
+    snackPosition: SnackPosition.BOTTOM,
+  );
+}
+
 
   @override
   void initState() {
@@ -93,10 +113,8 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
               PageView.builder(
                 itemCount: images.length,
                 onPageChanged: (i) => setState(() => _currentImageIndex = i),
-                itemBuilder: (_, i) => _buildSmartImage(
-                  images[i],
-                  darkOverlay: true,
-                ),
+                itemBuilder: (_, i) =>
+                    _buildSmartImage(images[i], darkOverlay: true),
               ),
 
             if (images.length > 1) _buildImageIndicator(),
@@ -135,54 +153,53 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   // ✅ Smart image (Base64 / /storage / http)
   // ---------------------------------------------------------------------------
   Widget _buildSmartImage(String raw, {bool darkOverlay = false}) {
-  final s = raw.trim();
-  if (s.isEmpty) return _brokenImage();
+    final s = raw.trim();
+    if (s.isEmpty) return _brokenImage();
 
-  // 1) ✅ Base64 (حتى لو ضمن URL أو /storage//9j/..)
-  final Uint8List? bytes = PhotoHelper.decodeFromAnything(s);
-  if (bytes != null) {
-    return Image.memory(
-      bytes,
-      fit: BoxFit.cover,
-      gaplessPlayback: true,
-      color: darkOverlay ? Colors.black38 : null,
-      colorBlendMode: darkOverlay ? BlendMode.darken : null,
-      errorBuilder: (_, __, ___) => _brokenImage(),
-    );
-  }
+    // 1) ✅ Base64 (حتى لو ضمن URL أو /storage//9j/..)
+    final Uint8List? bytes = PhotoHelper.decodeFromAnything(s);
+    if (bytes != null) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        color: darkOverlay ? Colors.black38 : null,
+        colorBlendMode: darkOverlay ? BlendMode.darken : null,
+        errorBuilder: (_, __, ___) => _brokenImage(),
+      );
+    }
 
-  // 2) ✅ URL كامل
-  if (s.startsWith('http://') || s.startsWith('https://')) {
-    return Image.network(
-      s,
-      fit: BoxFit.cover,
-      color: darkOverlay ? Colors.black38 : null,
-      colorBlendMode: darkOverlay ? BlendMode.darken : null,
-      loadingBuilder: (_, child, progress) =>
-          progress == null
-              ? child
-              : const Center(child: CircularProgressIndicator(color: Colors.white)),
-      errorBuilder: (_, __, ___) => _brokenImage(),
-    );
-  }
-
-  // 3) ✅ /storage/... أو storage/... (رابط نسبي)
-  final url = _toAbsoluteUrl(s);
-  if (url == null) return _brokenImage();
-
-  return Image.network(
-    url,
-    fit: BoxFit.cover,
-    color: darkOverlay ? Colors.black38 : null,
-    colorBlendMode: darkOverlay ? BlendMode.darken : null,
-    loadingBuilder: (_, child, progress) =>
-        progress == null
+    // 2) ✅ URL كامل
+    if (s.startsWith('http://') || s.startsWith('https://')) {
+      return Image.network(
+        s,
+        fit: BoxFit.cover,
+        color: darkOverlay ? Colors.black38 : null,
+        colorBlendMode: darkOverlay ? BlendMode.darken : null,
+        loadingBuilder: (_, child, progress) => progress == null
             ? child
-            : const Center(child: CircularProgressIndicator(color: Colors.white)),
-    errorBuilder: (_, __, ___) => _brokenImage(),
-  );
-}
+            : const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+        errorBuilder: (_, __, ___) => _brokenImage(),
+      );
+    }
 
+    // 3) ✅ /storage/... أو storage/... (رابط نسبي)
+    final url = _toAbsoluteUrl(s);
+    if (url == null) return _brokenImage();
+
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      color: darkOverlay ? Colors.black38 : null,
+      colorBlendMode: darkOverlay ? BlendMode.darken : null,
+      loadingBuilder: (_, child, progress) => progress == null
+          ? child
+          : const Center(child: CircularProgressIndicator(color: Colors.white)),
+      errorBuilder: (_, __, ___) => _brokenImage(),
+    );
+  }
 
   /// يحول المسار النسبي إلى رابط كامل
   /// - /storage/xxx  -> http://ip:8000/storage/xxx
@@ -291,9 +308,9 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   // Sections
   // ---------------------------------------------------------------------------
   Widget _buildDescription() => _section(
-        'عن هذه الشقة',
-        'هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة...',
-      );
+    'عن هذه الشقة',
+    'هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة...',
+  );
 
   Widget _buildFeatures() {
     final theme = Theme.of(context);
@@ -315,29 +332,71 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
     );
   }
 
-  Widget _buildRatingSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('أضف تقييمك', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 16),
-        Center(
-          child: AnimatedRatingStars(
-            initialRating: _userRating,
-            onChanged: (rating) => setState(() => _userRating = rating),
-            displayRatingValue: true,
-            interactiveTooltips: true,
-            customFilledIcon: Icons.star,
-            customHalfFilledIcon: Icons.star_half,
-            customEmptyIcon: Icons.star_border,
-            starSize: 40,
-            animationDuration: const Duration(milliseconds: 500),
-            animationCurve: Curves.easeInOut,
+    Widget _buildRatingSection() {
+    // controllers
+    final AuthController auth = Get.find<AuthController>();
+    final BookingController bookingCtrl = Get.find<BookingController>();
+
+    return Obx(() {
+      final isTenant = auth.currentUser.value?.isTenant == true;
+      final canRate = isTenant && bookingCtrl.canRateApartment(widget.apartment.id);
+
+      String hint;
+      if (!isTenant) {
+        hint = 'التقييم متاح للمستأجر فقط.';
+      } else if (!canRate) {
+        hint = 'يمكنك التقييم فقط بعد انتهاء مدة الحجز (بعد تاريخ الخروج) للحجز الموافق عليه.';
+      } else {
+        hint = 'قيّم تجربتك بعد انتهاء الإقامة.';
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('أضف تقييمك', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            hint,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: canRate ? Colors.green.shade700 : Colors.grey.shade600,
+                ),
           ),
-        ),
-      ],
-    );
+          const SizedBox(height: 16),
+
+          Center(
+            child: AbsorbPointer(
+              absorbing: !canRate || _ratingSubmitted,
+              child: Opacity(
+                opacity: (!canRate || _ratingSubmitted) ? 0.45 : 1,
+                child: AnimatedRatingStars(
+                  initialRating: _userRating,
+                  onChanged: (rating) => setState(() => _userRating = rating),
+                  displayRatingValue: true,
+                  interactiveTooltips: true,
+                  customFilledIcon: Icons.star,
+                  customHalfFilledIcon: Icons.star_half,
+                  customEmptyIcon: Icons.star_border,
+                  starSize: 40,
+                  animationDuration: const Duration(milliseconds: 500),
+                  animationCurve: Curves.easeInOut,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // زر الإرسال يظهر فقط إذا مسموح بالتقييم
+          if (canRate)
+            PrimaryButton(
+              text: _ratingSubmitted ? 'تم الإرسال' : 'إرسال التقييم',
+              onPressed: (_ratingSubmitted || _userRating <= 0) ? null : _submitRating,
+            ),
+        ],
+      );
+    });
   }
+
 
   Widget _buildOwnerInfo() {
     final theme = Theme.of(context);
@@ -398,40 +457,70 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   // ---------------------------------------------------------------------------
   Widget _buildBottomBar() {
     final theme = Theme.of(context);
-    return BottomAppBar(
+
+    return Material(
       elevation: 10,
-      surfaceTintColor: theme.colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('السعر', style: theme.textTheme.bodySmall),
-                Text(
-                  widget.apartment.price,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: _isAvailable
-                  ? PrimaryButton(
-                      text: 'احجز الآن',
-                      onPressed: _navigateToBooking,
-                    )
-                  : ElevatedButton(
-                      onPressed: _cancelBooking,
-                      child: const Text('إلغاء الحجز'),
+      color: theme.colorScheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+          child: SizedBox(
+            height: 60, // ✅ أطول شوي (بدون Overflow)
+            child: Directionality(
+              textDirection: TextDirection.ltr, // ✅ السعر يسار والزر يمين
+              child: Row(
+                children: [
+                  // ✅ Price (يسار) - بدون overflow حتى لو الخط كبير
+                  Expanded(
+                    flex: 3,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'السعر\n',
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                            TextSpan(
+                              text: widget.apartment.price,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: theme.primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.left,
+                        maxLines: 2,
+                      ),
                     ),
+                  ),
+
+                  //const SizedBox(width: 8),
+
+                  // ✅ Button (يمين)
+                  Expanded(
+                    flex: 7,
+                    child: SizedBox(
+                      height: 80,
+                      child: _isAvailable
+                          ? PrimaryButton(
+                              text: 'احجز الآن',
+                              onPressed: _navigateToBooking,
+                            )
+                          : ElevatedButton(
+                              onPressed: _cancelBooking,
+                              child: const Text('إلغاء الحجز'),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -441,11 +530,13 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
   // Helpers
   // ---------------------------------------------------------------------------
   Future<void> _navigateToBooking() async {
-    final result = await Navigator.pushNamed(
-      context,
-      AppRouter.booking,
-      arguments: widget.apartment,
-    ) as bool?;
+    final result =
+        await Navigator.pushNamed(
+              context,
+              AppRouter.booking,
+              arguments: {'apartment': widget.apartment},
+            )
+            as bool?;
 
     if (result == true) {
       setState(() => _isAvailable = false);

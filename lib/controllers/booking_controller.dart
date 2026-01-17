@@ -1,5 +1,9 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/booking_model.dart';
 import 'package:project/services/booking_service.dart';
@@ -10,7 +14,6 @@ class BookingController extends GetxController {
   // DEPENDENCY
   // ===============================
   final BookingService _bookingService;
-
   BookingController(this._bookingService);
 
   // ===============================
@@ -27,17 +30,23 @@ class BookingController extends GetxController {
 
   final RxList<BookingModel> bookings = <BookingModel>[].obs;
 
+  Timer? _statusTick;
+
   // ===============================
   // GETTERS
   // ===============================
-  List<BookingModel> get activeBookings =>
-      bookings.where((b) => b.status == BookingStatus.active).toList();
+  /// ✅ Active tab: approved/active + pending (حتى ما يضيع الحجز بانتظار الموافقة)
+  List<BookingModel> get activeBookings => bookings.where((b) {
+  final s = b.effectiveStatus;
+  return s == BookingStatus.active || s == BookingStatus.pending;
+}).toList();
 
-  List<BookingModel> get completedBookings =>
-      bookings.where((b) => b.status == BookingStatus.completed).toList();
+List<BookingModel> get completedBookings =>
+    bookings.where((b) => b.effectiveStatus == BookingStatus.completed).toList();
 
-  List<BookingModel> get cancelledBookings =>
-      bookings.where((b) => b.status == BookingStatus.cancelled).toList();
+List<BookingModel> get cancelledBookings =>
+    bookings.where((b) => b.effectiveStatus == BookingStatus.cancelled).toList();
+
 
   // ===============================
   // LIFECYCLE
@@ -45,7 +54,19 @@ class BookingController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    // ✅ tick لتحديث الواجهة إذا صار الحجز Completed بسبب انتهاء الوقت
+    _statusTick = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (bookings.isNotEmpty) bookings.refresh();
+    });
+
     useMockData ? _loadMockBookings() : fetchMyBookings();
+  }
+
+  @override
+  void onClose() {
+    _statusTick?.cancel();
+    super.onClose();
   }
 
   // ===============================
@@ -61,7 +82,7 @@ class BookingController extends GetxController {
           end: DateTime.now().add(const Duration(days: 5)),
         ),
         totalPrice: 2850,
-        status: BookingStatus.active,
+        status: BookingStatus.active, // ✅ يشتغل لأن الموديل يدعم status:
       ),
       BookingModel(
         bookingId: 'booking-2',
@@ -71,7 +92,7 @@ class BookingController extends GetxController {
           end: DateTime.now().add(const Duration(days: 15)),
         ),
         totalPrice: 2150,
-        status: BookingStatus.active,
+        status: BookingStatus.pending,
       ),
       BookingModel(
         bookingId: 'booking-3',
@@ -96,6 +117,19 @@ class BookingController extends GetxController {
     ]);
   }
 
+
+
+bool canRateApartment(String apartmentId) {
+  final id = apartmentId.toString();
+
+  return bookings.any((b) {
+    final bId = b.apartment.id.toString();
+    return bId == id && b.isCheckoutPassed; // ✅ فقط بعد مرور يوم الخروج
+  });
+}
+
+
+
   // ===============================
   // API ACTIONS
   // ===============================
@@ -105,13 +139,19 @@ class BookingController extends GetxController {
       errorMessage.value = '';
 
       final response = await _bookingService.getMyBookings();
-      final List<dynamic> data =
-    response.data['data']?['bookings'] ?? [];
-
+      final List<dynamic> data = (response.data is Map)
+          ? (response.data['data']?['bookings'] as List? ?? [])
+          : [];
 
       bookings.assignAll(
-        data.map((json) => BookingModel.fromJson(json)).toList(),
+        data
+            .whereType<Map>()
+            .map((e) => BookingModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
       );
+
+      // ✅ تحديث سريع للحالات بعد الجلب
+      bookings.refresh();
     } catch (e) {
       errorMessage.value = 'Failed to load your bookings.';
       debugPrint('Fetch Bookings Error: $e');
@@ -123,6 +163,7 @@ class BookingController extends GetxController {
   Future<void> createBooking({
     required Apartment apartment,
     required DateTimeRange dateRange,
+    String paymentMethod = 'cash',
   }) async {
     try {
       isLoading.value = true;
@@ -131,6 +172,7 @@ class BookingController extends GetxController {
       await _bookingService.createBooking(
         apartmentId: apartment.id,
         dateRange: dateRange,
+        paymentMethod: paymentMethod,
       );
 
       await fetchMyBookings();
@@ -142,14 +184,32 @@ class BookingController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-    } catch (e) {
+    } on dio.DioException catch (e) {
+      final data = e.response?.data;
+      String msg = 'Failed to create booking.';
+
+      if (data is Map) {
+        final errors = data['errors'];
+        if (errors is Map && errors.isNotEmpty) {
+          final firstVal = errors.values.first;
+          if (firstVal is List && firstVal.isNotEmpty) {
+            msg = firstVal.first.toString();
+          } else if (data['message'] != null) {
+            msg = data['message'].toString();
+          }
+        } else if (data['message'] != null) {
+          msg = data['message'].toString();
+        }
+      }
+
       Get.snackbar(
         'Error',
-        'Failed to create booking. The dates might be unavailable.',
+        msg,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+
       debugPrint('Create Booking Error: $e');
       rethrow;
     } finally {
@@ -163,9 +223,11 @@ class BookingController extends GetxController {
 
       final index = bookings.indexWhere((b) => b.bookingId == bookingId);
       if (index != -1) {
-        bookings[index].status = BookingStatus.cancelled;
-        bookings.refresh();
+        // ✅ immutable: استبدل العنصر بدل تعديل داخله
+        bookings[index] = bookings[index].copyWith(rawStatus: 'cancelled');
       }
+
+      bookings.refresh();
 
       Get.snackbar(
         'Success',
@@ -196,10 +258,9 @@ class BookingController extends GetxController {
         newDateRange: newDateRange,
       );
 
-      // بعد النجاح، قم بتحديث قائمة الحجوزات
       await fetchMyBookings();
 
-      Get.back(); // العودة من صفحة التعديل
+      Get.back();
       Get.snackbar(
         'Success',
         'Your booking has been updated successfully!',
@@ -213,7 +274,7 @@ class BookingController extends GetxController {
         errorMessage.value,
         snackPosition: SnackPosition.BOTTOM,
       );
-      print("Update Booking Error: $e");
+      debugPrint('Update Booking Error: $e');
       rethrow;
     } finally {
       isLoading.value = false;

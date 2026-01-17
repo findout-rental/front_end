@@ -1,3 +1,4 @@
+//booking_service.dart
 // lib/services/booking_service.dart
 
 import 'package:dio/dio.dart';
@@ -11,48 +12,45 @@ class BookingService {
 
   /// يجلب قائمة حجوزات المستخدم الحالي (للمستأجر)
   Future<Response> getMyBookings() {
-    // يتصل بـ GET /api/bookings (مسار المستأجر)
     return _dioClient.get(ApiEndpoints.bookings);
   }
 
-  /// ينشئ حجزًا جديدًا (للمستأجر)
+  /// ✅ ينشئ حجزًا جديدًا (للمستأجر)
   Future<Response> createBooking({
     required String apartmentId,
     required DateTimeRange dateRange,
+    String paymentMethod = 'cash', // ✅ افتراضي (عدّله إذا الباك بده قيمة مختلفة)
   }) {
-    // يتصل بـ POST /api/bookings (مسار المستأجر)
     return _dioClient.post(
       ApiEndpoints.bookings,
       data: {
         'apartment_id': apartmentId,
-        'start_date': dateRange.start.toIso8601String().substring(
-          0,
-          10,
-        ), // YYYY-MM-DD
-        'end_date': dateRange.end.toIso8601String().substring(
-          0,
-          10,
-        ), // YYYY-MM-DD
+        // ✅ أسماء مطابقة للباك
+        'check_in_date': dateRange.start.toIso8601String().substring(0, 10),
+        'check_out_date': dateRange.end.toIso8601String().substring(0, 10),
+        // ✅ مطلوب من الباك
+        'payment_method': paymentMethod,
       },
     );
   }
 
   /// يلغي حجزًا (للمستأجر)
   Future<Response> cancelBooking(String bookingId) {
-    // يتصل بـ POST /api/bookings/{id}/cancel
     return _dioClient.post('${ApiEndpoints.bookings}/$bookingId/cancel');
   }
 
+  /// ✅ تحديث حجز
   Future<Response> updateBooking({
     required String bookingId,
     required DateTimeRange newDateRange,
+    String paymentMethod = 'cash',
   }) {
-    // يتصل بـ PUT /api/bookings/{id}
     return _dioClient.put(
       '${ApiEndpoints.bookings}/$bookingId',
       data: {
-        'start_date': newDateRange.start.toIso8601String().substring(0, 10),
-        'end_date': newDateRange.end.toIso8601String().substring(0, 10),
+        'check_in_date': newDateRange.start.toIso8601String().substring(0, 10),
+        'check_out_date': newDateRange.end.toIso8601String().substring(0, 10),
+        'payment_method': paymentMethod,
       },
     );
   }

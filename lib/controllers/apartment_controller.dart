@@ -1,6 +1,7 @@
 // apartment_controller.dart
 import 'package:get/get.dart' hide FormData;
 import 'package:dio/dio.dart' as dio;
+import 'dart:async';
 
 import 'package:project/core/storage/auth_storage.dart';
 import 'package:project/controllers/auth_controller.dart';
@@ -9,12 +10,16 @@ import 'package:project/services/apartment_service.dart';
 import 'package:project/services/auth_service.dart';
 import 'package:project/services/favorite_service.dart';
 
+
 class ApartmentController extends GetxController {
   // --- DEPENDENCIES ---
   final ApartmentService _apartmentService;
   final FavoriteService _favoriteService;
   final AuthService _authService;
   final AuthStorage _authStorage;
+  final activeFilters = <String, dynamic>{}.obs;
+Timer? _searchDebounce;
+
 
   ApartmentController(
     this._apartmentService,
@@ -84,6 +89,39 @@ class ApartmentController extends GetxController {
     }
   }
 
+
+Map<String, dynamic> _normalizeFilters(Map<String, dynamic> input) {
+  final out = <String, dynamic>{};
+
+  input.forEach((k, v) {
+    if (v == null) return;
+    if (v is String && v.trim().isEmpty) return;
+    if (v is List && v.isEmpty) return;
+    out[k] = v;
+  });
+
+  // ✅ Laravel/PHP: لازم amenities[] (مو amenities)
+  if (out['amenities'] is List) {
+    out['amenities[]'] = out.remove('amenities');
+  }
+
+  return out;
+}
+
+void applyFilters(Map<String, dynamic> filters) {
+  final normalized = _normalizeFilters(filters);
+  activeFilters.assignAll(normalized);
+  fetchApartments(filters: normalized);
+}
+
+void clearFilters() {
+  activeFilters.clear();
+  fetchApartments(filters: const {});
+}
+
+
+
+
   // =========================
   // FETCH
   // =========================
@@ -95,10 +133,13 @@ class ApartmentController extends GetxController {
       // ✅ إذا ما عنا role لسه (قبل login) لا تعمل request
       if (role == null) return;
 
+ final normalized = _normalizeFilters(filters ?? Map<String, dynamic>.from(activeFilters));
+    if (filters != null) activeFilters.assignAll(normalized);
+
       // ✅ 1) اختار endpoint حسب role
       final apartmentsFuture = isOwner
-          ? _apartmentService.getOwnerApartments(filters: filters)
-          : _apartmentService.getApartments(filters: filters);
+          ? _apartmentService.getOwnerApartments(filters: normalized)
+          : _apartmentService.getApartments(filters: normalized);
 
       dio.Response apartmentsResponse;
       dio.Response? favoritesResponse;
@@ -149,12 +190,27 @@ class ApartmentController extends GetxController {
   // SEARCH (from getX_v2)
   // =========================
   void searchApartments(String query) {
-    if (query.trim().isEmpty) {
-      fetchApartments(); // بدون فلاتر
+  _searchDebounce?.cancel();
+  _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+    final q = query.trim();
+    final next = Map<String, dynamic>.from(activeFilters);
+
+    if (q.isEmpty) {
+      next.remove('search');
     } else {
-      fetchApartments(filters: {'search': query.trim()});
+      next['search'] = q;
     }
-  }
+
+    applyFilters(next);
+  });
+}
+
+@override
+void onClose() {
+  _searchDebounce?.cancel();
+  super.onClose();
+}
+
 
   // ---------------------------------------------------------------------------
   // Helpers (from my-work)

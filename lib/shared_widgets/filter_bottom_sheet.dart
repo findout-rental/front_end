@@ -1,6 +1,6 @@
-// lib/shared_widgets/filter_bottom_sheet.dart
-
 import 'package:flutter/material.dart';
+
+enum PriceType { nightly, monthly }
 
 class FilterBottomSheet extends StatefulWidget {
   const FilterBottomSheet({super.key});
@@ -10,101 +10,110 @@ class FilterBottomSheet extends StatefulWidget {
 }
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  // --- DATA MOCK ---
-  // في تطبيق حقيقي، قد تأتي هذه من API
+  // Mock data
   final Map<String, List<String>> _governorateCityMap = {
     'الرياض': ['الرياض', 'الدرعية', 'الخرج'],
     'مكة المكرمة': ['مكة', 'جدة', 'الطائف'],
     'الشرقية': ['الدمام', 'الخبر', 'الجبيل'],
   };
 
-  // --- LOCAL STATE for filters ---
+  // state
+  PriceType _priceType = PriceType.nightly;
   RangeValues? _priceRange;
-  RangeValues? _areaRange;
+
   int? _bedrooms;
   int? _bathrooms;
-  double? _rating;
-  bool _hasBalcony = false;
+
   String? _selectedGovernorate;
   String? _selectedCity;
   List<String> _cities = [];
 
-  // --- HELPER METHODS ---
+  // ✅ amenities (لازم القيم تطابق اللي مخزنة بالباك داخل JSON)
+  final Map<String, String> _amenities = const {
+    'balcony': 'شرفة',
+    'wifi': 'واي فاي',
+    'parking': 'موقف سيارة',
+    'ac': 'مكيف',
+  };
+  final Set<String> _selectedAmenities = {};
 
-  /// تحديث قائمة المدن عند اختيار محافظة
+  // sorting supported by backend: price_low, price_high, rating, newest, oldest
+  String _sortBy = 'newest';
+
   void _updateCities(String newGovernorate) {
     setState(() {
       _selectedGovernorate = newGovernorate;
       _cities = _governorateCityMap[newGovernorate] ?? [];
-      _selectedCity = null; // إعادة تعيين المدينة عند تغيير المحافظة
+      _selectedCity = null;
     });
   }
 
-  /// إعادة تعيين جميع الفلاتر إلى قيمها الافتراضية
   void _resetFilters() {
     setState(() {
+      _priceType = PriceType.nightly;
       _priceRange = null;
-      _areaRange = null;
       _bedrooms = null;
       _bathrooms = null;
-      _rating = null;
-      _hasBalcony = false;
       _selectedGovernorate = null;
       _selectedCity = null;
       _cities = [];
+      _selectedAmenities.clear();
+      _sortBy = 'newest';
     });
   }
 
-  /// ✅ دالة جديدة لتجميع الفلاتر في Map
-  Map<String, dynamic> _collectFilters() {
-    final filters = <String, dynamic>{};
+Map<String, dynamic> _collectFilters() {
+  final filters = <String, dynamic>{};
 
-    if (_priceRange != null) {
-      filters['min_price'] = _priceRange!.start.round();
-      filters['max_price'] = _priceRange!.end.round();
-    }
-    if (_areaRange != null) {
-      filters['min_area'] = _areaRange!.start.round();
-      filters['max_area'] = _areaRange!.end.round();
-    }
-    if (_bedrooms != null) {
-      filters['bedrooms'] = _bedrooms;
-    }
-    if (_bathrooms != null) {
-      filters['bathrooms'] = _bathrooms;
-    }
-    if (_rating != null) {
-      filters['min_rating'] = _rating!.round();
-    }
-    if (_hasBalcony) {
-      filters['has_balcony'] = 1; // استخدام 1 لـ true
-    }
-    if (_selectedGovernorate != null) {
-      filters['governorate'] = _selectedGovernorate;
-    }
-    if (_selectedCity != null) {
-      filters['city'] = _selectedCity;
-    }
-
-    return filters;
+  // ✅ الموقع
+  if (_selectedGovernorate != null && _selectedGovernorate!.trim().isNotEmpty) {
+    filters['governorate'] = _selectedGovernorate!.trim();
+  }
+  if (_selectedCity != null && _selectedCity!.trim().isNotEmpty) {
+    filters['city'] = _selectedCity!.trim();
   }
 
-  /// التحقق مما إذا كان قد تم اختيار أي فلتر
-  bool _isAnyFilterSelected() {
-    return _priceRange != null ||
-        _areaRange != null ||
-        _bedrooms != null ||
-        _bathrooms != null ||
-        _rating != null ||
-        _hasBalcony ||
-        _selectedGovernorate != null ||
-        _selectedCity != null;
+  // ✅ السعر حسب النوع المختار (ليلي/شهري)
+  if (_priceRange != null) {
+    final min = _priceRange!.start.round();
+    final max = _priceRange!.end.round();
+
+    if (_priceType == PriceType.nightly) {
+      filters['min_nightly_price'] = min;
+      filters['max_nightly_price'] = max;
+    } else {
+      filters['min_monthly_price'] = min;
+      filters['max_monthly_price'] = max;
+    }
   }
+
+  // ✅ غرف/حمامات
+  if (_bedrooms != null && _bedrooms! > 0) {
+    filters['bedrooms'] = _bedrooms;
+  }
+  if (_bathrooms != null && _bathrooms! > 0) {
+    filters['bathrooms'] = _bathrooms;
+  }
+
+  // ✅ amenities[] (مثل اللي ظهر معك باللوغ تبع owner)
+  if (_selectedAmenities.isNotEmpty) {
+    filters['amenities[]'] = _selectedAmenities.toList();
+  }
+
+  // ✅ sort
+  if (_sortBy.trim().isNotEmpty) {
+    filters['sort_by'] = _sortBy.trim();
+  }
+
+  return filters;
+}
+
+
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // لتجنب تغطية الحقول عند ظهور لوحة المفاتيح
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -117,7 +126,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Header ---
             Center(
               child: Container(
                 width: 40,
@@ -131,13 +139,42 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             const SizedBox(height: 20),
             Text('فلترة', style: theme.textTheme.titleLarge),
 
-            // --- Price Range ---
-            _sectionTitle('السعر (ريال)'),
-            _rangeInfo(
-              _priceRange,
-              defaultMin: 1000,
-              defaultMax: 50000,
-              unit: 'ريال',
+            // ---------------- Price type ----------------
+            const SizedBox(height: 16),
+            Text('نوع السعر', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<PriceType>(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('ليلي'),
+                    value: PriceType.nightly,
+                    groupValue: _priceType,
+                    onChanged: (v) => setState(() => _priceType = v!),
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<PriceType>(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('شهري'),
+                    value: PriceType.monthly,
+                    groupValue: _priceType,
+                    onChanged: (v) => setState(() => _priceType = v!),
+                  ),
+                ),
+              ],
+            ),
+
+            // ---------------- Price range ----------------
+            const SizedBox(height: 8),
+            Text('السعر', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 6),
+            Text(
+              _priceRange == null
+                  ? 'بدون فلترة سعر'
+                  : '${_priceRange!.start.round()} - ${_priceRange!.end.round()}',
+              style: theme.textTheme.bodySmall,
             ),
             RangeSlider(
               values: _priceRange ?? const RangeValues(1000, 50000),
@@ -145,34 +182,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               max: 50000,
               divisions: 49,
               labels: RangeLabels(
-                _priceRange?.start.round().toString() ?? '1000',
-                _priceRange?.end.round().toString() ?? '50000',
+                (_priceRange?.start.round() ?? 1000).toString(),
+                (_priceRange?.end.round() ?? 50000).toString(),
               ),
               onChanged: (v) => setState(() => _priceRange = v),
             ),
 
-            // --- Area Range ---
-            _sectionTitle('المساحة (م²)'),
-            _rangeInfo(_areaRange, defaultMin: 50, defaultMax: 400, unit: 'م²'),
-            RangeSlider(
-              values: _areaRange ?? const RangeValues(50, 400),
-              min: 50,
-              max: 400,
-              divisions: 35,
-              labels: RangeLabels(
-                _areaRange?.start.round().toString() ?? '50',
-                _areaRange?.end.round().toString() ?? '400',
-              ),
-              onChanged: (v) => setState(() => _areaRange = v),
-            ),
-
-            // --- Rooms ---
-            _sectionTitle('عدد الغرف'),
+            const SizedBox(height: 12),
+            Text('الغرف', style: theme.textTheme.titleMedium),
             Row(
               children: [
-                Expanded(
-                  child: Text('غرف النوم', style: theme.textTheme.bodyMedium),
-                ),
+                Expanded(child: Text('غرف النوم', style: theme.textTheme.bodyMedium)),
                 _stepper(
                   value: _bedrooms,
                   onUpdate: (v) => setState(() => _bedrooms = v),
@@ -181,9 +201,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             ),
             Row(
               children: [
-                Expanded(
-                  child: Text('الحمّامات', style: theme.textTheme.bodyMedium),
-                ),
+                Expanded(child: Text('الحمّامات', style: theme.textTheme.bodyMedium)),
                 _stepper(
                   value: _bathrooms,
                   onUpdate: (v) => setState(() => _bathrooms = v),
@@ -191,40 +209,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ],
             ),
 
-            // --- Rating ---
-            _sectionTitle('التقييم'),
-            Row(
-              children: [
-                Expanded(
-                  child: Slider(
-                    value: _rating ?? 0, // ابدأ من 0
-                    min: 0,
-                    max: 5,
-                    divisions: 5,
-                    label: (_rating ?? 0).round().toString(),
-                    onChanged: (v) => setState(() => _rating = v),
-                  ),
-                ),
-                Text(
-                  (_rating ?? 0).round().toString(),
-                  style: theme.textTheme.titleMedium,
-                ),
-                Icon(Icons.star, color: Colors.amber.shade700, size: 20),
-              ],
-            ),
-
-            // --- Other Features ---
-            CheckboxListTile(
-              title: Text('يوجد شرفة', style: theme.textTheme.titleMedium),
-              value: _hasBalcony,
-              onChanged: (v) => setState(() => _hasBalcony = v ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-            ),
-            const Divider(),
-
-            // --- Location ---
-            _sectionTitle('الموقع'),
+            const SizedBox(height: 12),
+            Text('الموقع', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: _selectedGovernorate,
@@ -243,18 +229,54 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 initialValue: _selectedCity,
                 hint: const Text('اختر المدينة'),
                 items: _cities
-                    .map(
-                      (city) =>
-                      DropdownMenuItem(value: city, child: Text(city)),
-                )
+                    .map((city) => DropdownMenuItem(value: city, child: Text(city)))
                     .toList(),
                 onChanged: (value) => setState(() => _selectedCity = value),
                 decoration: const InputDecoration(labelText: 'المدينة'),
               ),
             ],
-            const SizedBox(height: 30),
 
-            // --- Action Buttons ---
+            const SizedBox(height: 16),
+            Text('المرافق', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            ..._amenities.entries.map((e) {
+              final key = e.key;
+              final label = e.value;
+              final checked = _selectedAmenities.contains(key);
+
+              return CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(label),
+                value: checked,
+                onChanged: (v) {
+                  setState(() {
+                    if (v == true) {
+                      _selectedAmenities.add(key);
+                    } else {
+                      _selectedAmenities.remove(key);
+                    }
+                  });
+                },
+              );
+            }),
+
+            const Divider(height: 32),
+            Text('الترتيب', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: _sortBy,
+              items: const [
+                DropdownMenuItem(value: 'newest', child: Text('الأحدث')),
+                DropdownMenuItem(value: 'oldest', child: Text('الأقدم')),
+                DropdownMenuItem(value: 'price_low', child: Text('السعر: من الأقل')),
+                DropdownMenuItem(value: 'price_high', child: Text('السعر: من الأعلى')),
+                DropdownMenuItem(value: 'rating', child: Text('الأعلى تقييمًا')),
+              ],
+              onChanged: (v) => setState(() => _sortBy = v ?? 'newest'),
+              decoration: const InputDecoration(labelText: 'Sort by'),
+            ),
+
+            const SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
@@ -263,11 +285,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     child: const Text('إعادة تعيين'),
                   ),
                 ),
-                const SizedBox(width: 15),
+                const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // ✅ تم تعديل هذا الجزء
                       final filters = _collectFilters();
                       Navigator.pop(context, filters);
                     },
@@ -282,44 +303,31 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(title, style: Theme.of(context).textTheme.titleMedium),
-    );
-  }
+  Widget _stepper({required int? value, required ValueChanged<int?> onUpdate}) {
+    final current = value ?? 0;
 
-  Widget _rangeInfo(
-      RangeValues? values, {
-        required double defaultMin,
-        required double defaultMax,
-        required String unit,
-      }) {
-    final start = (values?.start ?? defaultMin).round();
-    final end = (values?.end ?? defaultMax).round();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        '$start - $end $unit',
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
-    );
-  }
-
-  Widget _stepper({int? value, required ValueChanged<int> onUpdate}) {
-    final currentValue = value ?? 0;
     return Row(
       children: [
         IconButton(
-          onPressed: currentValue > 1 ? () => onUpdate(currentValue - 1) : null,
-          icon: const Icon(Icons.remove_circle_outline),
-        ),
-        Text(
-          currentValue.toString(),
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          tooltip: 'مسح',
+          onPressed: value == null ? null : () => onUpdate(null),
+          icon: const Icon(Icons.clear),
         ),
         IconButton(
-          onPressed: () => onUpdate(currentValue + 1),
+          onPressed: (value == null || current <= 1) ? null : () => onUpdate(current - 1),
+          icon: const Icon(Icons.remove_circle_outline),
+        ),
+        SizedBox(
+          width: 44,
+          child: Center(
+            child: Text(
+              value?.toString() ?? 'الكل',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => onUpdate((value ?? 0) + 1),
           icon: const Icon(Icons.add_circle_outline),
         ),
       ],

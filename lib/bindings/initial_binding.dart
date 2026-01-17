@@ -5,6 +5,7 @@ import 'package:project/controllers/booking_controller.dart';
 import 'package:project/controllers/chat_controller.dart'; // تأكد من وجود هذا الاستيراد
 import 'package:project/controllers/home_controller.dart';
 import 'package:project/controllers/language_controller.dart';
+import 'package:project/controllers/rating_controller.dart';
 import 'package:project/controllers/theme_controller.dart';
 import 'package:project/core/network/dio_client.dart';
 import 'package:project/core/storage/auth_storage.dart';
@@ -14,6 +15,7 @@ import 'package:project/services/booking_service.dart';
 import 'package:project/services/chat_service.dart';
 import 'package:project/services/favorite_service.dart';
 import 'package:project/services/notification_service.dart';
+import 'package:project/services/rating_service.dart';
 import 'package:project/services/websocket_service.dart'; // تأكد من وجود هذا الاستيراد
 
 class InitialBinding extends Bindings {
@@ -35,6 +37,8 @@ class InitialBinding extends Bindings {
     Get.put<ChatService>(ChatService(Get.find()), permanent: true);
     Get.put<WebsocketService>(WebsocketService(), permanent: true);
     Get.put<NotificationService>(NotificationService(Get.find()), permanent: true);
+    Get.put(RatingService(Get.find<DioClient>()));
+    Get.put(RatingController(Get.find<RatingService>()));
 
     // ===============================
     // CONTROLLERS (GLOBAL)

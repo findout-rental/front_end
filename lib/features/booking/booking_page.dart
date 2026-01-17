@@ -7,6 +7,9 @@ import 'package:project/controllers/booking_controller.dart';
 import 'package:project/data/models/apartment_model.dart';
 import 'package:project/data/models/booking_model.dart';
 import 'package:project/shared_widgets/primary_button.dart';
+import 'dart:typed_data';
+import 'package:project/core/network/api_endpoints.dart';
+import 'package:project/core/utils/photo_helper.dart';
 
 class BookingPage extends StatefulWidget {
   final Apartment apartment;
@@ -93,7 +96,9 @@ class _BookingPageState extends State<BookingPage> {
     final bool isEditing = widget.existingBooking != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'edit_booking'.tr : 'confirm_booking'.tr)),
+      appBar: AppBar(
+        title: Text(isEditing ? 'edit_booking'.tr : 'confirm_booking'.tr),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -111,7 +116,9 @@ class _BookingPageState extends State<BookingPage> {
               () => PrimaryButton(
                 text: controller.isLoading.value
                     ? '...'
-                    : (isEditing ? 'save_changes'.tr : 'complete_booking_and_payment'.tr),
+                    : (isEditing
+                          ? 'save_changes'.tr
+                          : 'complete_booking_and_payment'.tr),
                 onPressed:
                     (_selectedDateRange != null && !controller.isLoading.value)
                     ? _submit
@@ -120,6 +127,75 @@ class _BookingPageState extends State<BookingPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSmartThumb(String raw) {
+    final s = raw.trim();
+    if (s.isEmpty) return _thumbPlaceholder();
+
+    // 1) Base64 (حتى لو جاي ضمن /storage//9j/.. أو URL)
+    final Uint8List? bytes = PhotoHelper.decodeFromAnything(s);
+    if (bytes != null) {
+      return Image.memory(
+        bytes,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => _thumbPlaceholder(),
+      );
+    }
+
+    // 2) URL كامل
+    if (s.startsWith('http://') || s.startsWith('https://')) {
+      return Image.network(
+        s,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _thumbPlaceholder(),
+      );
+    }
+
+    // 3) مسار نسبي /storage/.. أو storage/..
+    final url = _toAbsoluteUrl(s);
+    if (url == null) return _thumbPlaceholder();
+
+    return Image.network(
+      url,
+      width: 100,
+      height: 100,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _thumbPlaceholder(),
+    );
+  }
+
+  String? _toAbsoluteUrl(String raw) {
+    final host = ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    var s = raw.trim();
+
+    // نظف تكرار /storage//
+    s = s.replaceFirst('/storage//', '/storage/');
+
+    // إذا كان Base64 متخفي هون لا تبني URL
+    if (s.contains('/9j/') || s.startsWith('/9j/')) return null;
+
+    if (s.startsWith('http://') || s.startsWith('https://')) return s;
+    if (s.startsWith('/')) return '$host$s';
+    return '$host/$s';
+  }
+
+  Widget _thumbPlaceholder() {
+    return Container(
+      width: 100,
+      height: 100,
+      color: Colors.grey.shade800,
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.image_not_supported_outlined,
+        color: Colors.white70,
       ),
     );
   }
@@ -133,11 +209,10 @@ class _BookingPageState extends State<BookingPage> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Image.network(
-            widget.apartment.images.first,
-            width: 100,
-            height: 100,
-            fit: BoxFit.cover,
+          child: _buildSmartThumb(
+            widget.apartment.images.isNotEmpty
+                ? widget.apartment.images.first
+                : '',
           ),
         ),
         const SizedBox(width: 16),
@@ -229,16 +304,23 @@ class _BookingPageState extends State<BookingPage> {
   }) {
     final theme = Theme.of(context);
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(content, style: theme.textTheme.bodySmall),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(
+                content,
+                style: theme.textTheme.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         TextButton(onPressed: onActionPressed, child: Text(actionText)),
       ],
     );
@@ -250,9 +332,16 @@ class _BookingPageState extends State<BookingPage> {
       fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
     );
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: style),
+        Expanded(
+          child: Text(
+            title,
+            style: style,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 12),
         Text(value, style: style),
       ],
     );

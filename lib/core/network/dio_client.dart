@@ -15,6 +15,9 @@ class DioClient {
         receiveTimeout: const Duration(seconds: 15),
         responseType: ResponseType.json,
         headers: {'Accept': 'application/json'},
+
+        // ✅ مهم: يخلي amenities[]=x&amenities[]=y
+    listFormat: ListFormat.multiCompatible,
       ),
     );
 

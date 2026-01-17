@@ -1,3 +1,4 @@
+// profile_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -5,7 +6,6 @@ import 'package:project/controllers/auth_controller.dart';
 import 'package:project/controllers/language_controller.dart';
 import 'package:project/controllers/theme_controller.dart';
 import 'package:project/core/routing/app_router.dart';
-import 'package:project/data/models/user_model.dart';
 import 'package:project/shared_widgets/role_toggle.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -14,57 +14,74 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final AuthController authController = Get.find<AuthController>();
     final ThemeController themeController = Get.find<ThemeController>();
     final LanguageController langController = Get.find<LanguageController>();
 
-    // لاحقًا الأفضل يكون من AuthController.currentUser
-    final user = UserModel.dummy();
+    // ✅ بدون Obx: التغيير بالـ Theme/Locale يعمل rebuild تلقائياً
+    final bool isLightMode = !Get.isDarkMode;
+    final bool isEnglish = (Get.locale?.languageCode ?? 'en') == 'en';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('profile'.tr),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text('profile'.tr), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(20.0),
         children: [
           // -------------------------------------------------------------------
-          // 🧑 User Info
+          // 🧑 User Info (هذا فقط يلي لازم Obx لأنه يعتمد Rx)
           // -------------------------------------------------------------------
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundImage: user.profileImageUrl != null
-                    ? NetworkImage(user.profileImageUrl!)
-                    : null,
-                child: user.profileImageUrl == null
-                    ? const Icon(Icons.person, size: 40)
-                    : null,
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.fullName,
-                    style: theme.textTheme.titleLarge?.copyWith(fontSize: 20),
+          Obx(() {
+            final user = authController.currentUser.value;
+
+            final fullName = user?.fullName ?? '...';
+            final phone = user?.phone ?? '';
+            final imageUrl = user?.profileImageUrl;
+
+            return Row(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+                      ? NetworkImage(imageUrl)
+                      : null,
+                  child: (imageUrl == null || imageUrl.isEmpty)
+                      ? const Icon(Icons.person, size: 40)
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fullName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontSize: 20,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        phone,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.phone,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.textTheme.bodySmall?.color,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            );
+          }),
+
           const Divider(height: 50),
 
           // -------------------------------------------------------------------
-          // 🌙 Theme Toggle
+          // 🌙 Theme Toggle (بدون Obx)
           // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
@@ -72,19 +89,17 @@ class ProfilePage extends StatelessWidget {
             title: 'theme'.tr,
             trailing: SizedBox(
               width: 150,
-              child: Obx(() {
-                return RoleToggle(
-                  optionOneText: 'Light'.tr,
-                  optionTwoText: 'Night'.tr,
-                  value: themeController.isLightMode.value,
-                  onChanged: themeController.toggleTheme,
-                );
-              }),
+              child: RoleToggle(
+                optionOneText: 'Light'.tr,
+                optionTwoText: 'Night'.tr,
+                value: isLightMode,
+                onChanged: themeController.toggleTheme, // ✅ الصحيح
+              ),
             ),
           ),
 
           // -------------------------------------------------------------------
-          // 🌐 Language Toggle
+          // 🌐 Language Toggle (بدون Obx)
           // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
@@ -92,14 +107,12 @@ class ProfilePage extends StatelessWidget {
             title: 'language'.tr,
             trailing: SizedBox(
               width: 150,
-              child: Obx(() {
-                return RoleToggle(
-                  optionOneText: 'English',
-                  optionTwoText: 'العربية',
-                  value: langController.isEnglish,
-                  onChanged: (_) => langController.toggleLanguage(),
-                );
-              }),
+              child: RoleToggle(
+                optionOneText: 'English',
+                optionTwoText: 'العربية',
+                value: isEnglish,
+                onChanged: (_) => langController.toggleLanguage(),
+              ),
             ),
           ),
 
@@ -126,7 +139,7 @@ class ProfilePage extends StatelessWidget {
           const Divider(height: 40),
 
           // -------------------------------------------------------------------
-          // 🚪 Logout (merged: real logout + confirmation dialog)
+          // 🚪 Logout
           // -------------------------------------------------------------------
           _buildProfileOption(
             context: context,
@@ -135,14 +148,14 @@ class ProfilePage extends StatelessWidget {
             isLogout: true,
             onTap: () {
               Get.defaultDialog(
-                title: 'confirm'.tr, // لو ما عندك key جاهز غيّره لنص ثابت
-                middleText: 'confirm_logout'.tr, // لو ما عندك key جاهز غيّره لنص ثابت
+                title: 'confirm'.tr,
+                middleText: 'confirm_logout'.tr,
                 textConfirm: 'logout'.tr,
                 textCancel: 'cancel'.tr,
                 confirmTextColor: Colors.white,
                 onConfirm: () {
                   Get.back();
-                  Get.find<AuthController>().logout();
+                  authController.logout();
                 },
               );
             },
@@ -166,7 +179,7 @@ class ProfilePage extends StatelessWidget {
     final theme = Theme.of(context);
     final Color color = isLogout
         ? theme.colorScheme.error
-        : theme.textTheme.bodyLarge!.color!;
+        : (theme.textTheme.bodyLarge?.color ?? theme.colorScheme.onSurface);
 
     return ListTile(
       leading: Icon(icon, color: color),
