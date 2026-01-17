@@ -8,8 +8,7 @@ class AppTranslations extends Translations {
       // General UI & Navigation
       'home': 'Home',
       'favorites': 'Favorites',
-      'my_apartments':
-          'My Bookings', // Changed from 'My Apartments' for tenants
+      'my_apartments': 'My Bookings',
       'profile': 'Profile',
       'language': 'Language',
       'light_mode': 'Light',
@@ -48,16 +47,16 @@ class AppTranslations extends Translations {
       'date_of_birth': 'Date Of Birth',
       'pending_approval_title': 'Pending Approval',
       'pending_approval_message':
-          'Your account has been created successfully.\nPlease wait for admin approval.',
+      'Your account has been created successfully.\nPlease wait for admin approval.',
       'back_to_sign_in': 'Back to Sign In',
       'forgot_password_instructions':
-          'Enter your phone number to receive a reset code.',
+      'Enter your phone number to receive a reset code.',
       'send_code': 'Send Code',
       'reset_password': 'Reset Password',
       'otp_code': 'OTP Code',
       'new_password': 'New Password',
       'please_fill_all_required_fields_correctly.':
-          'Please fill all required fields correctly.',
+      'Please fill all required fields correctly.',
 
       // Profile
       'edit_profile': 'Edit Profile',
@@ -107,14 +106,14 @@ class AppTranslations extends Translations {
       'no_bookings_in_section': 'No bookings in this section.',
       'confirm_cancellation_title': 'Confirm Cancellation',
       'confirm_cancellation_message':
-          'Are you sure you want to cancel this booking?',
+      'Are you sure you want to cancel this booking?',
 
       // Chat & Notifications
       'my_chats': 'My Chats',
       'notifications': 'Notifications',
       'no_notifications_yet': 'No notifications yet',
       'notifications_description':
-          'Any notification sent will appear here\nand you can follow up at any time',
+      'Any notification sent will appear here\nand you can follow up at any time',
       'error': 'Erorr',
     },
 
@@ -162,10 +161,10 @@ class AppTranslations extends Translations {
       'date_of_birth': 'تاريخ الميلاد',
       'pending_approval_title': 'بانتظار الموافقة',
       'pending_approval_message':
-          'تم إنشاء حسابك بنجاح.\nيرجى انتظار موافقة المسؤول.',
+      'تم إنشاء حسابك بنجاح.\nيرجى انتظار موافقة المسؤول.',
       'back_to_sign_in': 'العودة لتسجيل الدخول',
       'forgot_password_instructions':
-          'أدخل رقم هاتفك لاستلام رمز إعادة التعيين.',
+      'أدخل رقم هاتفك لاستلام رمز إعادة التعيين.',
       'send_code': 'أرسل الرمز',
       'reset_password': 'إعادة تعيين كلمة المرور',
       'otp_code': 'رمز التحقق',
@@ -225,7 +224,7 @@ class AppTranslations extends Translations {
       'notifications': 'الإشعارات',
       'no_notifications_yet': 'لا توجد إشعارات بعد',
       'notifications_description':
-          'أي إشعار سيتم إرساله سيظهر هنا\nويمكنك متابعته في أي وقت',
+      'أي إشعار سيتم إرساله سيظهر هنا\nويمكنك متابعته في أي وقت',
 
       'error': 'خطأ',
     },

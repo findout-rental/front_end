@@ -92,7 +92,7 @@ class _HomePageState extends State<HomePage> {
                       child: _buildNavItem(
                         theme,
                         Icons.home_filled,
-                        'الرئيسية',
+                        'home' .tr,
                         0,
                         current == 0,
                       ),
@@ -101,7 +101,7 @@ class _HomePageState extends State<HomePage> {
                       child: _buildNavItem(
                         theme,
                         Icons.favorite,
-                        'المفضلة',
+                        'favorites' .tr,
                         1,
                         current == 1,
                       ),
@@ -113,7 +113,7 @@ class _HomePageState extends State<HomePage> {
                       child: _buildNavItem(
                         theme,
                         Icons.apartment,
-                        'شققي',
+                        'my_apartments' .tr,
                         2,
                         current == 2,
                       ),
@@ -122,7 +122,7 @@ class _HomePageState extends State<HomePage> {
                       child: _buildNavItem(
                         theme,
                         Icons.person,
-                        'حسابي',
+                        'profile' .tr,
                         3,
                         current == 3,
                       ),

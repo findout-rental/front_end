@@ -110,7 +110,6 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
                 itemBuilder: (_, i) =>
                     _buildSmartImage(images[i], darkOverlay: true),
               ),
-
             if (images.length > 1) _buildImageIndicator(),
           ],
         ),
@@ -191,13 +190,9 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
 
   String? _toAbsoluteUrl(String raw) {
     final host = ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
-
     var s = raw.trim();
-
     s = s.replaceFirst('/storage//', '/storage/');
-
     if (s.startsWith('/storage//9j/') || s.startsWith('/9j/')) return null;
-
     if (s.startsWith('/')) return '$host$s';
     return '$host/$s';
   }
@@ -283,29 +278,94 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
     );
   }
 
-  Widget _buildDescription() => _section(
-    'عن هذه الشقة',
-    'هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة...',
-  );
+  Widget _buildDescription() {
+    final desc = widget.apartment.description.trim();
+    return _section(
+      'عن هذه الشقة',
+      desc.isNotEmpty ? desc : 'لا يوجد وصف لهذه الشقة.',
+    );
+  }
 
   Widget _buildFeatures() {
     final theme = Theme.of(context);
+    final apt = widget.apartment;
+
+    final items = <Widget>[];
+
+    if (apt.bedrooms > 0) {
+      items.add(
+        _buildFeatureIcon(Icons.bed_outlined, '${apt.bedrooms} غرف نوم'),
+      );
+    }
+    if (apt.bathrooms > 0) {
+      items.add(
+        _buildFeatureIcon(Icons.bathtub_outlined, '${apt.bathrooms} حمّام'),
+      );
+    }
+    if (apt.size > 0) {
+      items.add(
+        _buildFeatureIcon(
+          Icons.square_foot_outlined,
+          '${_formatArea(apt.size)} م²',
+        ),
+      );
+    }
+
+    if (apt.hasBalcony) {
+      items.add(_buildFeatureIcon(Icons.balcony_outlined, 'شرفة'));
+    }
+    if (apt.hasAc) {
+      items.add(_buildFeatureIcon(Icons.ac_unit_outlined, 'تكييف'));
+    }
+    if (apt.hasWifi) {
+      items.add(_buildFeatureIcon(Icons.wifi, 'إنترنت'));
+    }
+
+    if (items.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('الميزات', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          Text(
+            'لا توجد مواصفات/ميزات مضافة.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('الميزات', style: theme.textTheme.titleMedium),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildFeatureIcon(Icons.bed_outlined, '3 غرف نوم'),
-            _buildFeatureIcon(Icons.bathtub_outlined, '2 حمام'),
-            _buildFeatureIcon(Icons.square_foot_outlined, '180 م²'),
-            _buildFeatureIcon(Icons.balcony_outlined, 'شرفة'),
-          ],
+
+        Wrap(
+          spacing: 1,
+          runSpacing: 20,
+          alignment: WrapAlignment.spaceBetween,
+          children: items,
         ),
+
+        if (apt.amenities.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          Text(
+            apt.amenities.join(' • '),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
       ],
     );
+  }
+
+  String _formatArea(double v) {
+    if (v % 1 == 0) return v.toInt().toString();
+    return v.toStringAsFixed(1);
   }
 
   Widget _buildRatingSection() {
@@ -339,7 +399,6 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
             ),
           ),
           const SizedBox(height: 16),
-
           Center(
             child: AbsorbPointer(
               absorbing: !canRate || _ratingSubmitted,
@@ -360,9 +419,7 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
           if (canRate)
             PrimaryButton(
               text: _ratingSubmitted ? 'تم الإرسال' : 'إرسال التقييم',
@@ -377,9 +434,10 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
 
   Widget _buildOwnerInfo() {
     final theme = Theme.of(context);
-    const ownerName = 'شركة العقار الذهبي';
-    const ownerImage = 'https://i.pravatar.cc/150?img=12';
-    const ownerId = 'owner_1';
+
+    final ownerName = widget.apartment.ownerName ?? 'المالك';
+    final ownerImage = widget.apartment.ownerImageUrl;
+    final ownerId = widget.apartment.ownerId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,41 +446,41 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
         const SizedBox(height: 12),
         Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 28,
-              backgroundImage: NetworkImage(ownerImage),
+              backgroundImage: (ownerImage != null && ownerImage.isNotEmpty)
+                  ? NetworkImage(ownerImage)
+                  : null,
+              child: (ownerImage == null || ownerImage.isEmpty)
+                  ? const Icon(Icons.person)
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ownerName,
-                    style: theme.textTheme.titleMedium?.copyWith(fontSize: 15),
-                  ),
-                  Text('عضو منذ 2021', style: theme.textTheme.bodySmall),
-                ],
+              child: Text(
+                ownerName,
+                style: theme.textTheme.titleMedium?.copyWith(fontSize: 15),
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.message_outlined),
-              color: theme.primaryColor,
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRouter.chatDetail,
-                  arguments: Chat(
-                    userId: ownerId,
-                    name: ownerName,
-                    imageUrl: ownerImage,
-                    lastMessage: 'يمكنك بدء المحادثة الآن...',
-                    time: '',
-                    unreadCount: 0,
-                  ),
-                );
-              },
-            ),
+            if (ownerId != null)
+              IconButton(
+                icon: const Icon(Icons.message_outlined),
+                color: theme.primaryColor,
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRouter.chatDetail,
+                    arguments: Chat(
+                      userId: ownerId,
+                      name: ownerName,
+                      imageUrl: ownerImage ?? '',
+                      lastMessage: 'يمكنك بدء المحادثة الآن...',
+                      time: '',
+                      unreadCount: 0,
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ],
@@ -471,7 +529,6 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
                       ),
                     ),
                   ),
-
                   Expanded(
                     flex: 7,
                     child: SizedBox(
@@ -504,22 +561,29 @@ class _ApartmentDetailPageState extends State<ApartmentDetailPage> {
               arguments: {'apartment': widget.apartment},
             )
             as bool?;
-
-    if (result == true) {
-      setState(() => _isAvailable = false);
-    }
+    if (result == true) setState(() => _isAvailable = false);
   }
 
   void _cancelBooking() => setState(() => _isAvailable = true);
 
   Widget _buildFeatureIcon(IconData icon, String label) {
     final theme = Theme.of(context);
-    return Column(
-      children: [
-        Icon(icon, size: 28, color: theme.textTheme.bodyMedium?.color),
-        const SizedBox(height: 8),
-        Text(label, style: theme.textTheme.bodySmall),
-      ],
+    return SizedBox(
+      width: 120,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 28, color: theme.textTheme.bodyMedium?.color),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
